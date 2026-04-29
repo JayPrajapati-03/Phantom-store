@@ -17,9 +17,11 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.5",
     "multer": "^2.1.1",
-    "nodemon": "^3.1.9",
     "openai": "^4.77.0",
     "stripe": "^17.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
   },
   "engines": {
     "node": ">=20"
