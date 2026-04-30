@@ -60,8 +60,12 @@ The frontend runs at `http://localhost:5173` and the backend API runs at `http:/
 | `backend/.env` | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name. |
 | `backend/.env` | `CLOUDINARY_API_KEY` | Cloudinary API key. |
 | `backend/.env` | `CLOUDINARY_API_SECRET` | Cloudinary API secret. |
-| `backend/.env` | `OPENAI_API_KEY` | OpenAI API key for AI endpoints. |
-| `backend/.env` | `OPENAI_MODEL` | OpenAI model used by AI services. |
+| `backend/.env` | `OPENAI_API_KEY` | Optional OpenAI API key for AI endpoints. Leave empty to avoid OpenAI billing. |
+| `backend/.env` | `OPENAI_MODEL` | Optional OpenAI model used by AI services. |
+| `backend/.env` | `OPENROUTER_API_KEY` | Optional OpenRouter API key. Takes priority over OpenAI when set. |
+| `backend/.env` | `OPENROUTER_MODEL` | OpenRouter model, such as `openrouter/free` for free-model routing. |
+| `backend/.env` | `APP_URL` | Optional public app URL sent to OpenRouter request headers. |
+| `backend/.env` | `APP_NAME` | Optional app name sent to OpenRouter request headers. |
 | `frontend/.env` | `VITE_API_URL` | Browser API base URL. |
 | `frontend/.env` | `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key for client checkout flows. |
 

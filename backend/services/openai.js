@@ -3,9 +3,27 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "missing-key"
-});
+const hasOpenRouter = Boolean(process.env.OPENROUTER_API_KEY);
+const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
+
+const client = hasOpenRouter
+  ? new OpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: "https://openrouter.ai/api/v1",
+      defaultHeaders: {
+        "HTTP-Referer": process.env.APP_URL || process.env.CLIENT_URL || "http://localhost:5173",
+        "X-Title": process.env.APP_NAME || "Phantom Store"
+      }
+    })
+  : new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY || "missing-key"
+    });
+
+const aiModel = hasOpenRouter
+  ? process.env.OPENROUTER_MODEL || "openrouter/free"
+  : process.env.OPENAI_MODEL || "gpt-4o-mini";
+
+const hasRemoteAi = hasOpenRouter || hasOpenAI;
 
 const parseJsonArray = (content, fallback = []) => {
   try {
@@ -26,7 +44,7 @@ const parseJsonObject = (content, fallback = {}) => {
 };
 
 export const generateTags = async ({ name = "", description = "", category = "", arCategory = "" }) => {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!hasRemoteAi) {
     return [name, category, arCategory]
       .join(" ")
       .toLowerCase()
@@ -36,7 +54,7 @@ export const generateTags = async ({ name = "", description = "", category = "",
   }
 
   const response = await client.chat.completions.create({
-    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+    model: aiModel,
     temperature: 0.2,
     messages: [
       {
@@ -57,7 +75,7 @@ export const generateTags = async ({ name = "", description = "", category = "",
 };
 
 export const suggestStyles = async ({ profile = {}, occasion = "", productIds = [], preferences = "" }) => {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!hasRemoteAi) {
     return [
       {
         title: "Clean everyday fit",
@@ -68,7 +86,7 @@ export const suggestStyles = async ({ profile = {}, occasion = "", productIds = 
   }
 
   const response = await client.chat.completions.create({
-    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+    model: aiModel,
     temperature: 0.6,
     response_format: { type: "json_object" },
     messages: [
@@ -89,7 +107,7 @@ export const suggestStyles = async ({ profile = {}, occasion = "", productIds = 
 };
 
 export const reviewOutfit = async ({ items = [], imageDescription = "", occasion = "" }) => {
-  if (!process.env.OPENAI_API_KEY) {
+  if (!hasRemoteAi) {
     return {
       score: 8,
       summary: "The outfit is cohesive and ready for everyday wear.",
@@ -98,7 +116,7 @@ export const reviewOutfit = async ({ items = [], imageDescription = "", occasion
   }
 
   const response = await client.chat.completions.create({
-    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+    model: aiModel,
     temperature: 0.4,
     response_format: { type: "json_object" },
     messages: [
