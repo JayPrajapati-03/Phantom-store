@@ -72,9 +72,16 @@ The frontend runs at `http://localhost:5173` and the backend API runs at `http:/
 - `GET /api/auth/me` returns the authenticated user.
 - `GET /api/products` lists products with filters.
 - `GET /api/products/:id` returns one product.
-- `POST /api/products` creates a product for merchants or admins.
-- `PUT /api/products/:id` updates a product.
+- `GET /api/products/search` searches products by text fields and AI tags.
+- `POST /api/products` creates a product for merchants or admins. Supports multipart `images` and `model` uploads to Cloudinary.
+- `PUT /api/products/:id` updates a product and can replace/add uploaded assets.
 - `DELETE /api/products/:id` deletes a product.
+- `GET /api/stores` lists stores with optional filters.
+- `GET /api/stores/:id` returns one store with products.
+- `GET /api/stores/my` returns the current merchant's stores.
+- `POST /api/stores` creates a store for merchants or admins.
+- `PUT /api/stores/:id` updates a store owned by the current merchant or any admin.
+- `DELETE /api/stores/:id` deletes a store owned by the current merchant or any admin.
 - `POST /api/orders` creates an order.
 - `GET /api/orders/my` returns the current user's orders.
 - `PATCH /api/orders/:id/status` updates order status for admins.

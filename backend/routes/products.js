@@ -1,20 +1,100 @@
 import express from "express";
+import multer from "multer";
 import Product from "../models/Product.js";
 import Store from "../models/Store.js";
 import { verifyToken, requireMerchantOrAdmin } from "../middleware/auth.js";
+import { uploadImage, uploadModel } from "../services/cloudinary.js";
 import { generateTags } from "../services/openai.js";
 
 const router = express.Router();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024,
+    files: 12
+  }
+});
+
+const productUpload = upload.fields([
+  { name: "images", maxCount: 10 },
+  { name: "image", maxCount: 1 },
+  { name: "model", maxCount: 1 },
+  { name: "glb", maxCount: 1 }
+]);
+
+const toArray = (value) => {
+  if (value === undefined || value === null || value === "") return [];
+  return Array.isArray(value) ? value : [value];
+};
+
+const parseJsonField = (value) => {
+  if (typeof value !== "string") return value;
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
+const normalizeImages = (value) =>
+  toArray(parseJsonField(value))
+    .flatMap((item) => (Array.isArray(item) ? item : [item]))
+    .map((item) => {
+      if (typeof item === "string") {
+        return { url: item, publicId: "" };
+      }
+
+      return item;
+    })
+    .filter((item) => item?.url);
+
+const normalizeTags = (value) =>
+  toArray(parseJsonField(value))
+    .flatMap((item) => (typeof item === "string" ? item.split(",") : [item]))
+    .map((tag) => String(tag).toLowerCase().trim())
+    .filter(Boolean);
+
+const buildProductPayload = async (body, files = {}) => {
+  const payload = { ...body };
+  const imageFiles = [...(files.images || []), ...(files.image || [])];
+  const modelFile = files.model?.[0] || files.glb?.[0];
+
+  if (payload.price !== undefined) payload.price = Number(payload.price);
+  if (payload.stock !== undefined) payload.stock = Number(payload.stock);
+
+  if (payload.images !== undefined) {
+    payload.images = normalizeImages(payload.images);
+  }
+
+  if (payload.aiTags !== undefined) {
+    payload.aiTags = normalizeTags(payload.aiTags);
+  }
+
+  if (imageFiles.length) {
+    const uploadedImages = await Promise.all(imageFiles.map((file) => uploadImage(file)));
+    payload.images = [...(payload.images || []), ...uploadedImages.map(({ url, publicId }) => ({ url, publicId }))];
+  }
+
+  if (modelFile) {
+    const uploadedModel = await uploadModel(modelFile);
+    payload.modelUrl = uploadedModel.url;
+  }
+
+  return payload;
+};
 
 router.get("/", async (req, res, next) => {
   try {
-    const { q, category, arCategory, storeId, minPrice, maxPrice, page = 1, limit = 24 } = req.query;
+    const { q, category, arCategory, storeId, price, minPrice, maxPrice, page = 1, limit = 24 } = req.query;
     const filter = {};
 
     if (category) filter.category = category;
     if (arCategory) filter.arCategory = arCategory;
     if (storeId) filter.storeId = storeId;
-    if (minPrice || maxPrice) {
+    if (price) {
+      filter.price = Number(price);
+    } else if (minPrice || maxPrice) {
       filter.price = {};
       if (minPrice) filter.price.$gte = Number(minPrice);
       if (maxPrice) filter.price.$lte = Number(maxPrice);
@@ -81,9 +161,9 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", verifyToken, requireMerchantOrAdmin, async (req, res, next) => {
+router.post("/", verifyToken, requireMerchantOrAdmin, productUpload, async (req, res, next) => {
   try {
-    const payload = req.body;
+    const payload = await buildProductPayload(req.body, req.files);
     const store = await Store.findById(payload.storeId);
 
     if (!store) {
@@ -113,7 +193,7 @@ router.post("/", verifyToken, requireMerchantOrAdmin, async (req, res, next) => 
   }
 });
 
-router.put("/:id", verifyToken, requireMerchantOrAdmin, async (req, res, next) => {
+router.put("/:id", verifyToken, requireMerchantOrAdmin, productUpload, async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id).populate("storeId");
 
@@ -125,9 +205,11 @@ router.put("/:id", verifyToken, requireMerchantOrAdmin, async (req, res, next) =
       return res.status(403).json({ message: "You can only update products in your store" });
     }
 
-    Object.assign(product, req.body);
+    const payload = await buildProductPayload(req.body, req.files);
 
-    if (!req.body.aiTags && (req.body.name || req.body.description || req.body.category || req.body.arCategory)) {
+    Object.assign(product, payload);
+
+    if (!payload.aiTags && (payload.name || payload.description || payload.category || payload.arCategory)) {
       product.aiTags = await generateTags(product);
     }
 

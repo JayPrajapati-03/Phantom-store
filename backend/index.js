@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.js";
 import productRoutes from "./routes/products.js";
 import orderRoutes from "./routes/orders.js";
+import storeRoutes from "./routes/stores.js";
 import paymentRoutes from "./routes/payment.js";
 import aiRoutes from "./routes/ai.js";
 
@@ -29,6 +30,7 @@ app.use((req, res, next) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/stores", storeRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/ai", aiRoutes);
 

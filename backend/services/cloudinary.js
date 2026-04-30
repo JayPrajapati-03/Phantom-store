@@ -4,18 +4,33 @@ import dotenv from "dotenv";
 dotenv.config();
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY || process.env.CLOUDINARY_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET || process.env.CLOUDINARY_SECRET
 });
+
+const uploadBuffer = (buffer, options) =>
+  new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve(result);
+    });
+
+    stream.end(buffer);
+  });
 
 const uploadFile = async (file, options) => {
   if (!file) {
     throw new Error("A file path, data URI, or buffer is required for upload");
   }
 
-  const source = Buffer.isBuffer(file) ? `data:application/octet-stream;base64,${file.toString("base64")}` : file;
-  const result = await cloudinary.uploader.upload(source, options);
+  const result = file.buffer || Buffer.isBuffer(file)
+    ? await uploadBuffer(file.buffer || file, options)
+    : await cloudinary.uploader.upload(file.path || file, options);
 
   return {
     url: result.secure_url,
