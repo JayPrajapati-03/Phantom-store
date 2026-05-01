@@ -153,6 +153,9 @@ function ProductDetail() {
 function TryOn() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
+  const [captureReviewImage, setCaptureReviewImage] = useState(null);
+  const [review, setReview] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
   const { suggestions, reason, loading, getSuggestions } = useStyleSuggestion();
 
   useEffect(() => {
@@ -165,12 +168,51 @@ function TryOn() {
     getSuggestions(product._id, product.category).catch(() => {});
   }, [getSuggestions, product]);
 
+  const getAiReview = async () => {
+    if (!product || !captureReviewImage) return;
+
+    try {
+      setReviewLoading(true);
+      const imageBase64 = captureReviewImage();
+      const response = await api.post("/ai/review", {
+        imageBase64,
+        productName: product.name
+      });
+      setReview(response.data);
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || "Unable to review outfit");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
   return (
     <Layout>
       <h1>AR Try On</h1>
       <div style={{ height: 640, border: "1px solid #263044", borderRadius: 8, overflow: "hidden", background: "#05070b" }}>
-        {product ? <ARCanvas product={product} /> : <p style={{ padding: 20 }}>Loading AR asset...</p>}
+        {product ? <ARCanvas product={product} onCaptureReady={setCaptureReviewImage} /> : <p style={{ padding: 20 }}>Loading AR asset...</p>}
       </div>
+      {product && (
+        <section style={{ marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <p style={{ color: "#abb7ce", margin: 0 }}>Capture your current AR look and get AI styling feedback.</p>
+          <button style={buttonStyle} onClick={getAiReview} disabled={reviewLoading || !captureReviewImage}>
+            {reviewLoading ? "Reviewing..." : "Get AI review"}
+          </button>
+        </section>
+      )}
+      {review && (
+        <section style={{ marginTop: 18, background: "#141925", border: "1px solid #252d3d", borderRadius: 8, padding: 16, display: "grid", gap: 10 }}>
+          <h2 style={{ margin: 0 }}>AI outfit review</h2>
+          <p style={{ margin: 0, color: "#f5f7fb" }}>Score: {review.score}/10</p>
+          {!!review.tips?.length && (
+            <div style={{ color: "#abb7ce", display: "grid", gap: 6 }}>
+              {review.tips.map((tip, index) => (
+                <p key={`${index}-${tip}`} style={{ margin: 0 }}>{index + 1}. {tip}</p>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
       {product && (
         <section style={{ marginTop: 24, display: "grid", gap: 14 }}>
           <div>

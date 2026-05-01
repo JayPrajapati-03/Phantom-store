@@ -221,6 +221,55 @@ Pick the most relevant product IDs for the search query.`
 };
 
 export const reviewOutfit = async ({ items = [], imageDescription = "", occasion = "" }) => {
+  if (typeof items === "object" && items !== null && ("imageBase64" in items || "productName" in items)) {
+    const { imageBase64 = "", productName = "" } = items;
+
+    if (!hasRemoteAi) {
+      return {
+        score: 8,
+        tips: [
+          "Keep the overall look balanced with one standout accessory.",
+          "Match the outfit with clean, occasion-appropriate footwear."
+        ]
+      };
+    }
+
+    const reviewModel = hasOpenRouter ? aiModel : "gpt-4o";
+    const response = await client.chat.completions.create({
+      model: reviewModel,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `The person is trying on: "${productName}".
+Rate this look out of 10 and give 2 styling tips.
+Return ONLY JSON: { "score": number, "tips": ["tip1","tip2"] }`
+            },
+            {
+              type: "image_url",
+              image_url: { url: imageBase64 }
+            }
+          ]
+        }
+      ]
+    });
+
+    const parsed = parseJsonObject(response.choices[0]?.message?.content || "{}", {
+      score: 0,
+      tips: []
+    });
+
+    return {
+      score: Number(parsed.score) || 0,
+      tips: Array.isArray(parsed.tips)
+        ? parsed.tips.map((tip) => String(tip).trim()).filter(Boolean).slice(0, 2)
+        : []
+    };
+  }
+
   if (!hasRemoteAi) {
     return {
       score: 8,

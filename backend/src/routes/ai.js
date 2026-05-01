@@ -82,6 +82,21 @@ router.post("/suggest", async (req, res, next) => {
   }
 });
 
+router.post("/review", async (req, res, next) => {
+  try {
+    const { imageBase64, productName } = req.body;
+
+    if (!imageBase64 || !productName) {
+      return res.status(400).json({ message: "imageBase64 and productName are required" });
+    }
+
+    const review = await reviewOutfit({ imageBase64, productName });
+    return res.json(review);
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.post("/outfit-review", verifyToken, async (req, res, next) => {
   try {
     const review = await reviewOutfit(req.body);
