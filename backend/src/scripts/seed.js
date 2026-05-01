@@ -19,7 +19,7 @@ const productSeeds = [
     category: "glasses",
     arCategory: "glasses",
     stock: 18,
-    images: [{ url: "https://placehold.co/800x600/1b2333/f5f7fb?text=Coastal+Sun+Aviators", publicId: "" }],
+    images: [{ url: "https://images.unsplash.com/photo-1615210768832-159ca3912a05?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
     aiTags: ["beach wedding", "summer glasses", "aviators", "gold frame", "vacation style", "coastal look"]
   },
   {
@@ -30,7 +30,7 @@ const productSeeds = [
     category: "jackets",
     arCategory: "jacket",
     stock: 10,
-    images: [{ url: "https://placehold.co/800x600/16202f/f5f7fb?text=Midnight+Tailored+Jacket", publicId: "" }],
+    images: [{ url: "https://images.unsplash.com/photo-1596832772762-78e213deff5f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
     aiTags: ["formal jacket", "beach wedding", "smart layering", "navy blazer", "evening style", "tailored"]
   },
   {
@@ -41,7 +41,7 @@ const productSeeds = [
     category: "bags",
     arCategory: "bag",
     stock: 22,
-    images: [{ url: "https://placehold.co/800x600/3a3028/f5f7fb?text=Sandstone+Carry+Bag", publicId: "" }],
+    images: [{ url: "https://images.unsplash.com/photo-1585488433862-b692398b2bfa?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
     aiTags: ["crossbody bag", "neutral accessory", "beach wedding", "resort wear", "summer bag", "travel style"]
   },
   {
@@ -52,7 +52,7 @@ const productSeeds = [
     category: "watches",
     arCategory: "watch",
     stock: 15,
-    images: [{ url: "https://placehold.co/800x600/402f35/f5f7fb?text=Rose+Gold+Minimal+Watch", publicId: "" }],
+    images: [{ url: "https://images.unsplash.com/photo-1602174528421-6c3e5b00e565?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
     aiTags: ["dress watch", "rose gold", "formal accessory", "wedding guest", "elegant watch", "minimal style"]
   },
   {
@@ -63,7 +63,7 @@ const productSeeds = [
     category: "shirts",
     arCategory: "shirt",
     stock: 28,
-    images: [{ url: "https://placehold.co/800x600/d8d0c3/1a1a1a?text=Ivory+Linen+Shirt", publicId: "" }],
+    images: [{ url: "https://images.unsplash.com/photo-1740711152088-88a009e877bb?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
     aiTags: ["linen shirt", "beach wedding", "summer formal", "lightweight shirt", "coastal outfit", "day event"]
   },
   {
@@ -74,7 +74,7 @@ const productSeeds = [
     category: "shoes",
     arCategory: "shoes",
     stock: 30,
-    images: [{ url: "https://placehold.co/800x600/10151f/f5f7fb?text=Obsidian+Street+Sneakers", publicId: "" }],
+    images: [{ url: "https://images.unsplash.com/photo-1560857792-215f9e3534ed?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
     aiTags: ["streetwear shoes", "black sneakers", "casual footwear", "daily style", "comfortable shoes", "minimal sneakers"]
   },
   {
@@ -85,7 +85,7 @@ const productSeeds = [
     category: "rings",
     arCategory: "ring",
     stock: 40,
-    images: [{ url: "https://placehold.co/800x600/5a3b2b/f5f7fb?text=Copper+Edge+Ring", publicId: "" }],
+    images: [{ url: "https://images.unsplash.com/photo-1675105151596-f2391ab706c2?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
     aiTags: ["statement ring", "metallic accessory", "stacked jewelry", "warm tone", "minimal jewelry", "daily accessory"]
   },
   {
@@ -96,7 +96,7 @@ const productSeeds = [
     category: "hats",
     arCategory: "hat",
     stock: 20,
-    images: [{ url: "https://placehold.co/800x600/2c3745/f5f7fb?text=Harbor+Classic+Hat", publicId: "" }],
+    images: [{ url: "https://images.unsplash.com/photo-1627733041826-77dd65dc5a19?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
     aiTags: ["classic hat", "sun protection", "casual accessory", "weekend outfit", "travel style", "outdoor look"]
   }
 ];
