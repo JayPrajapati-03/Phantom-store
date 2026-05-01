@@ -6,7 +6,7 @@ export function keypointTo3D(keypoint, videoSize = { width: 1280, height: 720 },
   const x = (keypoint.x / videoSize.width) * 2 - 1;
   const y = -(keypoint.y / videoSize.height) * 2 + 1;
 
-  return new THREE.Vector3(x * 4, y * 2.25, depth);
+  return new THREE.Vector3(x * 2.1, y * 1.2, depth);
 }
 
 const byName = (pose, name) => pose?.keypoints?.find((point) => point.name === name || point.part === name);
@@ -22,6 +22,11 @@ const midpoint = (a, b) => {
   };
 };
 
+const distance = (a, b, fallback = 1) => {
+  if (!a || !b) return fallback;
+  return Math.hypot(a.x - b.x, a.y - b.y);
+};
+
 export function getModelPosition(pose, arCategory, videoSize) {
   const leftEye = byName(pose, "left_eye");
   const rightEye = byName(pose, "right_eye");
@@ -33,18 +38,23 @@ export function getModelPosition(pose, arCategory, videoSize) {
   const rightWrist = byName(pose, "right_wrist");
   const leftHip = byName(pose, "left_hip");
   const rightHip = byName(pose, "right_hip");
+  const leftAnkle = byName(pose, "left_ankle");
+  const rightAnkle = byName(pose, "right_ankle");
 
   const faceCenter = midpoint(leftEye, rightEye) || midpoint(leftEar, rightEar);
   const shoulderCenter = midpoint(leftShoulder, rightShoulder);
   const hipCenter = midpoint(leftHip, rightHip);
+  const ankleCenter = midpoint(leftAnkle, rightAnkle);
 
-  const shoulderWidth = leftShoulder && rightShoulder ? Math.abs(leftShoulder.x - rightShoulder.x) : 220;
-  const faceWidth = leftEar && rightEar ? Math.abs(leftEar.x - rightEar.x) : shoulderWidth * 0.55;
+  const shoulderWidth = distance(leftShoulder, rightShoulder, 220);
+  const faceWidth = distance(leftEar, rightEar, shoulderWidth * 0.55);
+  const torsoHeight = distance(shoulderCenter, hipCenter, 260);
+  const armLength = distance(rightShoulder || leftShoulder, rightWrist || leftWrist, 180);
 
   const defaults = {
-    position: new THREE.Vector3(0, 0, 0),
+    position: new THREE.Vector3(0, 0, -1.8),
     rotation: new THREE.Euler(0, 0, 0),
-    scale: 1
+    scale: 0.35
   };
 
   if (!pose) return defaults;
@@ -52,41 +62,57 @@ export function getModelPosition(pose, arCategory, videoSize) {
   switch (arCategory) {
     case "glasses":
       return {
-        position: keypointTo3D(faceCenter, videoSize, 0),
+        position: keypointTo3D(faceCenter, videoSize, -1.4),
         rotation: new THREE.Euler(0, 0, 0),
-        scale: Math.max(faceWidth / 130, 0.6)
+        scale: Math.max(faceWidth / 420, 0.08)
       };
     case "hat":
       return {
-        position: keypointTo3D(faceCenter ? { ...faceCenter, y: faceCenter.y - faceWidth * 0.75 } : null, videoSize, 0),
+        position: keypointTo3D(
+          faceCenter ? { ...faceCenter, y: faceCenter.y - faceWidth * 0.85 } : null,
+          videoSize,
+          -1.6
+        ),
         rotation: new THREE.Euler(0, 0, 0),
-        scale: Math.max(faceWidth / 150, 0.7)
+        scale: Math.max(faceWidth / 360, 0.16)
       };
     case "shirt":
     case "jacket":
       return {
-        position: keypointTo3D(shoulderCenter, videoSize, 0),
+        position: keypointTo3D(
+          shoulderCenter ? { ...shoulderCenter, y: shoulderCenter.y + torsoHeight * 0.18 } : null,
+          videoSize,
+          -2.1
+        ),
         rotation: new THREE.Euler(0, 0, 0),
-        scale: Math.max(shoulderWidth / 180, 0.8)
+        scale: Math.max(shoulderWidth / 280, 0.28)
       };
     case "watch":
     case "ring":
       return {
-        position: keypointTo3D(rightWrist || leftWrist, videoSize, 0),
-        rotation: new THREE.Euler(0, 0, 0),
-        scale: Math.max(shoulderWidth / 420, 0.35)
+        position: keypointTo3D(rightWrist || leftWrist, videoSize, -1.2),
+        rotation: new THREE.Euler(0, 0, -0.3),
+        scale: Math.max(armLength / 900, 0.06)
       };
     case "bag":
       return {
-        position: keypointTo3D(leftShoulder || rightShoulder, videoSize, 0),
+        position: keypointTo3D(
+          leftShoulder
+            ? { ...leftShoulder, x: leftShoulder.x - shoulderWidth * 0.15, y: leftShoulder.y + torsoHeight * 0.45 }
+            : rightShoulder
+              ? { ...rightShoulder, x: rightShoulder.x + shoulderWidth * 0.15, y: rightShoulder.y + torsoHeight * 0.45 }
+              : null,
+          videoSize,
+          -1.9
+        ),
         rotation: new THREE.Euler(0, 0.2, 0),
-        scale: Math.max(shoulderWidth / 260, 0.55)
+        scale: Math.max(shoulderWidth / 320, 0.2)
       };
     case "shoes":
       return {
-        position: keypointTo3D(hipCenter, videoSize, 0),
+        position: keypointTo3D(ankleCenter || hipCenter, videoSize, -1.3),
         rotation: new THREE.Euler(0, 0, 0),
-        scale: Math.max(shoulderWidth / 260, 0.5)
+        scale: Math.max(shoulderWidth / 520, 0.12)
       };
     default:
       return defaults;

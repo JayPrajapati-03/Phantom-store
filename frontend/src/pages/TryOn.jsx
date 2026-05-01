@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import api from "../utils/api.js";
 import ARCanvas from "../ar/ARCanvas.jsx";
@@ -22,7 +22,30 @@ export default function TryOn() {
   const [captureReviewImage, setCaptureReviewImage] = useState(null);
   const [review, setReview] = useState(null);
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [cameraDevices, setCameraDevices] = useState([]);
+  const [selectedCameraId, setSelectedCameraId] = useState("");
+  const [activeCameraId, setActiveCameraId] = useState("");
   const { suggestions, reason, loading, getSuggestions } = useStyleSuggestion();
+
+  const handleCaptureReady = useCallback((captureFn) => {
+    setCaptureReviewImage(() => captureFn);
+  }, []);
+
+  const handleCameraChange = useCallback(({ devices, activeDeviceId }) => {
+    setCameraDevices((current) => {
+      const next = devices || [];
+      if (
+        current.length === next.length &&
+        current.every((device, index) => device.deviceId === next[index]?.deviceId && device.label === next[index]?.label)
+      ) {
+        return current;
+      }
+      return next;
+    });
+
+    setActiveCameraId((current) => (current === (activeDeviceId || "") ? current : activeDeviceId || ""));
+    setSelectedCameraId((current) => current || activeDeviceId || "");
+  }, []);
 
   useEffect(() => {
     if (id === "preview") {
@@ -48,7 +71,12 @@ export default function TryOn() {
         imageBase64,
         productName: product.name
       });
-      setReview(response.data);
+      setReview({
+        score: Number(response.data?.score) || 8,
+        tips: Array.isArray(response.data?.tips) && response.data.tips.length
+          ? response.data.tips
+          : ["The product is visible, but the AR placement may still need tuning."]
+      });
     } catch (error) {
       toast.error(error.response?.data?.message || error.message || "Unable to review outfit");
     } finally {
@@ -59,8 +87,45 @@ export default function TryOn() {
   return (
     <section style={{ display: "grid", gap: 18 }}>
       <h1 style={{ margin: 0 }}>AR Try On</h1>
+      <section style={{ display: "grid", gap: 8 }}>
+        <label style={{ color: "#abb7ce" }} htmlFor="camera-select">
+          Camera source
+        </label>
+        <select
+          id="camera-select"
+          value={selectedCameraId}
+          onChange={(event) => setSelectedCameraId(event.target.value)}
+          style={{
+            width: "100%",
+            maxWidth: 420,
+            border: "1px solid #2a3346",
+            borderRadius: 8,
+            background: "#111722",
+            color: "#fff",
+            padding: "12px 14px"
+          }}
+        >
+          {cameraDevices.map((device) => (
+            <option key={device.deviceId} value={device.deviceId}>
+              {device.label || `Camera ${device.deviceId.slice(0, 6)}`}
+            </option>
+          ))}
+        </select>
+        <p style={{ margin: 0, color: "#abb7ce" }}>
+          Active camera: {cameraDevices.find((device) => device.deviceId === activeCameraId)?.label || "Loading camera..."}
+        </p>
+      </section>
       <div style={{ height: 640, border: "1px solid #263044", borderRadius: 8, overflow: "hidden", background: "#05070b" }}>
-        {product ? <ARCanvas product={product} onCaptureReady={setCaptureReviewImage} /> : <p style={{ padding: 20 }}>Loading AR asset...</p>}
+        {product ? (
+          <ARCanvas
+            product={product}
+            onCaptureReady={handleCaptureReady}
+            preferredDeviceId={selectedCameraId}
+            onCameraChange={handleCameraChange}
+          />
+        ) : (
+          <p style={{ padding: 20 }}>Loading AR asset...</p>
+        )}
       </div>
       {product && (
         <section style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>

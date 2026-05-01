@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import React, { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Environment, OrbitControls, useGLTF } from "@react-three/drei";
 import { useCamera } from "./useCamera.js";
@@ -20,10 +20,15 @@ function ProductModel({ product, pose }) {
   );
 }
 
-export default function ARCanvas({ product, onCaptureReady }) {
-  const { videoRef, ready, error } = useCamera();
+export default function ARCanvas({ product, onCaptureReady, preferredDeviceId, onCameraChange }) {
+  const { videoRef, ready, error, devices, activeDeviceId } = useCamera({ preferredDeviceId });
   const { pose } = usePoseDetection(videoRef, ready);
   const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!onCameraChange) return;
+    onCameraChange({ devices, activeDeviceId });
+  }, [activeDeviceId, devices, onCameraChange]);
 
   useEffect(() => {
     if (!onCaptureReady) return undefined;
