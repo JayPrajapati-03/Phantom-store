@@ -60,7 +60,22 @@ export const useCartStore = create(
         get().items.reduce((sum, item) => sum + Number(item.price) * (item.qty ?? item.quantity ?? 1), 0)
     }),
     {
-      name: "phantom-cart"
+      name: "phantom-cart",
+      merge: (persistedState, currentState) => {
+        const nextItems = Array.isArray(persistedState?.items)
+          ? persistedState.items.map((item) => ({
+              ...item,
+              qty: item.qty ?? item.quantity ?? 1,
+              quantity: item.quantity ?? item.qty ?? 1
+            }))
+          : [];
+
+        return {
+          ...currentState,
+          ...persistedState,
+          items: nextItems
+        };
+      }
     }
   )
 );

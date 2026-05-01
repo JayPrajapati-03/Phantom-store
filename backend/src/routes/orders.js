@@ -68,6 +68,15 @@ router.get("/my", verifyToken, async (req, res, next) => {
   }
 });
 
+router.get("/", verifyToken, requireAdmin, async (req, res, next) => {
+  try {
+    const orders = await Order.find({}).sort({ createdAt: -1 });
+    return res.json({ orders });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.get("/:userId", verifyToken, async (req, res, next) => {
   try {
     if (req.user.role !== "admin" && String(req.user._id) !== req.params.userId) {

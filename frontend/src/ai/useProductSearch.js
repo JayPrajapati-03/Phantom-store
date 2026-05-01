@@ -12,7 +12,7 @@ export function useProductSearch() {
 
     try {
       const response = query
-        ? await api.post("/ai/semantic-search", { query })
+        ? await api.get("/products/search", { params: { q: query } })
         : await api.get("/products", {
             params: {
               limit: 100,
