@@ -160,6 +160,61 @@ Return ONLY JSON: { "suggestions": ["category1","category2","category3"], "reaso
   };
 };
 
+export const rankProductsForSearch = async ({ query = "", products = [] }) => {
+  if (!query) {
+    return [];
+  }
+
+  if (!hasRemoteAi) {
+    const normalizedQuery = query.toLowerCase();
+
+    return products
+      .filter((product) => {
+        const haystack = [
+          product.name,
+          product.description,
+          product.category,
+          ...(product.aiTags || [])
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        return haystack.includes(normalizedQuery);
+      })
+      .map((product) => String(product._id))
+      .slice(0, 12);
+  }
+
+  const catalog = products
+    .map(
+      (product) =>
+        `ID:${product._id} Name:${product.name} Category:${product.category} Tags:${(product.aiTags || []).join(",")}`
+    )
+    .join("\n");
+
+  const response = await client.chat.completions.create({
+    model: aiModel,
+    temperature: 0.2,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "user",
+        content: `User searched: "${query}"
+Product catalog:
+${catalog}
+
+Return ONLY JSON: { "ids": ["id1","id2","id3"] }
+Pick the most relevant product IDs for the search query.`
+      }
+    ]
+  });
+
+  const parsed = parseJsonObject(response.choices[0]?.message?.content || "{}", { ids: [] });
+  return Array.isArray(parsed.ids)
+    ? parsed.ids.map((item) => String(item).trim()).filter(Boolean)
+    : [];
+};
+
 export const reviewOutfit = async ({ items = [], imageDescription = "", occasion = "" }) => {
   if (!hasRemoteAi) {
     return {
