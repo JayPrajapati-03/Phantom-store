@@ -11,7 +11,7 @@ export const useAuthStore = create(
       isAdmin: () => get().user?.role === "admin"
     }),
     {
-      name: "phantom-store-auth"
+      name: "phantom-auth"
     }
   )
 );

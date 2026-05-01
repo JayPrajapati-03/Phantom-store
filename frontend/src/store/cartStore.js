@@ -5,14 +5,20 @@ export const useCartStore = create(
   persist(
     (set, get) => ({
       items: [],
-      addItem: (product, quantity = 1) =>
+      addItem: (product, qty = 1) =>
         set((state) => {
           const existing = state.items.find((item) => item._id === product._id);
 
           if (existing) {
             return {
               items: state.items.map((item) =>
-                item._id === product._id ? { ...item, quantity: item.quantity + quantity } : item
+                item._id === product._id
+                  ? {
+                      ...item,
+                      qty: item.qty + qty,
+                      quantity: item.qty + qty
+                    }
+                  : item
               )
             };
           }
@@ -27,7 +33,8 @@ export const useCartStore = create(
                 images: product.images || [],
                 modelUrl: product.modelUrl,
                 arCategory: product.arCategory,
-                quantity
+                qty,
+                quantity: qty
               }
             ]
           };
@@ -36,17 +43,24 @@ export const useCartStore = create(
         set((state) => ({
           items: state.items.filter((item) => item._id !== productId)
         })),
-      updateQty: (productId, quantity) =>
+      updateQty: (productId, qty) =>
         set((state) => ({
           items: state.items.map((item) =>
-            item._id === productId ? { ...item, quantity: Math.max(Number(quantity) || 1, 1) } : item
+            item._id === productId
+              ? {
+                  ...item,
+                  qty: Math.max(Number(qty) || 1, 1),
+                  quantity: Math.max(Number(qty) || 1, 1)
+                }
+              : item
           )
         })),
       clearCart: () => set({ items: [] }),
-      total: () => get().items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0)
+      total: () =>
+        get().items.reduce((sum, item) => sum + Number(item.price) * (item.qty ?? item.quantity ?? 1), 0)
     }),
     {
-      name: "phantom-store-cart"
+      name: "phantom-cart"
     }
   )
 );

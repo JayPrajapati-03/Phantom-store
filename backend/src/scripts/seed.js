@@ -9,14 +9,7 @@ import User from "../models/User.js";
 dotenv.config();
 
 const modelUrl = "https://modelviewer.dev/shared-assets/models/Astronaut.glb";
-const slugify = (value) =>
-  String(value)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-const buildSeedImageUrl = (productKey) =>
-  `https://picsum.photos/seed/${slugify(productKey)}/1200/900`;
+const buildSeedImageUrl = (imageId) => `https://picsum.photos/id/${imageId}/1200/900`;
 
 const productFamilies = [
   {
@@ -203,7 +196,8 @@ const productSeeds = productFamilies.flatMap((family, familyIndex) =>
     const variantNumber = itemIndex + 1;
     const price = family.basePrice + (itemIndex % 4) * 9 + familyIndex * 2;
     const stock = 10 + (itemIndex % 6) * 4 + familyIndex;
-    const imageUrl = buildSeedImageUrl(`${familyKey}-${variantNumber}-${name}`);
+    const imageId = 10 + familyIndex * 20 + itemIndex;
+    const imageUrl = buildSeedImageUrl(imageId);
 
     return {
       key: `${familyKey}-${variantNumber}`,
