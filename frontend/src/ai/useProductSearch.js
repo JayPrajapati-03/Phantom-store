@@ -13,7 +13,12 @@ export function useProductSearch() {
     try {
       const response = query
         ? await api.post("/ai/semantic-search", { query })
-        : await api.get("/products");
+        : await api.get("/products", {
+            params: {
+              limit: 100,
+              page: 1
+            }
+          });
       const nextProducts = response.data.products || [];
       setProducts(nextProducts);
       return nextProducts;

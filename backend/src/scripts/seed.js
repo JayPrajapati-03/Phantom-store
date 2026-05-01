@@ -9,97 +9,215 @@ import User from "../models/User.js";
 dotenv.config();
 
 const modelUrl = "https://modelviewer.dev/shared-assets/models/Astronaut.glb";
+const slugify = (value) =>
+  String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
-const productSeeds = [
+const buildSeedImageUrl = (productKey) =>
+  `https://picsum.photos/seed/${slugify(productKey)}/1200/900`;
+
+const productFamilies = [
   {
-    key: "coastal-sun-aviators",
-    name: "Coastal Sun Aviators",
-    description: "Lightweight gold-frame aviators designed for sunny travel looks and outdoor events.",
-    price: 79,
     category: "glasses",
     arCategory: "glasses",
-    stock: 18,
-    images: [{ url: "https://images.unsplash.com/photo-1615210768832-159ca3912a05?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
-    aiTags: ["beach wedding", "summer glasses", "aviators", "gold frame", "vacation style", "coastal look"]
+    basePrice: 69,
+    baseDescription:
+      "Statement eyewear designed to sharpen everyday outfits, vacation looks, and event styling.",
+    tags: ["sunglasses", "eyewear", "summer style", "travel accessory", "fashion glasses"],
+    names: [
+      "Coastal Sun Aviators",
+      "Nightline Square Frames",
+      "Monaco Weekend Shades",
+      "Silver Horizon Specs",
+      "Jetstream Club Glasses",
+      "Palm Light Aviators",
+      "Metro Focus Frames",
+      "Laguna Tint Shades",
+      "Golden Hour Eyewear",
+      "Mirage Edge Sunglasses",
+      "Skyline Minimal Frames",
+      "Boardwalk Polar Shades"
+    ]
   },
   {
-    key: "midnight-tailored-jacket",
-    name: "Midnight Tailored Jacket",
-    description: "Structured navy jacket with a clean silhouette for weddings, evening dinners, and polished layering.",
-    price: 149,
     category: "jackets",
     arCategory: "jacket",
-    stock: 10,
-    images: [{ url: "https://images.unsplash.com/photo-1596832772762-78e213deff5f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
-    aiTags: ["formal jacket", "beach wedding", "smart layering", "navy blazer", "evening style", "tailored"]
+    basePrice: 139,
+    baseDescription:
+      "Layering-ready outerwear with a structured silhouette for cool evenings, smart casual looks, and events.",
+    tags: ["jacket", "layering", "smart casual", "evening style", "outerwear"],
+    names: [
+      "Midnight Tailored Jacket",
+      "Harbor Line Bomber",
+      "Westfield Utility Jacket",
+      "Noir Motion Layer",
+      "Slate Evening Jacket",
+      "Summit Street Bomber",
+      "Marina Breeze Jacket",
+      "Afterglow Zip Jacket",
+      "Tailored City Layer",
+      "Northshore Coach Jacket",
+      "Driftline Casual Jacket",
+      "Urban Edge Outerwear"
+    ]
   },
   {
-    key: "sandstone-carry-bag",
-    name: "Sandstone Carry Bag",
-    description: "Neutral-toned crossbody bag that pairs easily with resort wear, wedding guest outfits, and weekend styling.",
-    price: 89,
     category: "bags",
     arCategory: "bag",
-    stock: 22,
-    images: [{ url: "https://images.unsplash.com/photo-1585488433862-b692398b2bfa?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
-    aiTags: ["crossbody bag", "neutral accessory", "beach wedding", "resort wear", "summer bag", "travel style"]
+    basePrice: 79,
+    baseDescription:
+      "Carry-all accessories that balance clean lines, easy styling, and day-to-night versatility.",
+    tags: ["bag", "crossbody", "travel style", "fashion accessory", "everyday carry"],
+    names: [
+      "Sandstone Carry Bag",
+      "Monarch Mini Satchel",
+      "Canvas Drift Crossbody",
+      "Noir City Sling",
+      "Portside Leather Bag",
+      "Velvet Lane Mini Bag",
+      "Marble Street Handbag",
+      "Luna Fold Crossbody",
+      "Cinder Carry Tote",
+      "Daybreak Belt Bag",
+      "Studio Compact Purse",
+      "Riviera Shoulder Bag"
+    ]
   },
   {
-    key: "rose-gold-minimal-watch",
-    name: "Rose Gold Minimal Watch",
-    description: "Slim rose gold watch with a refined face that complements dressy and semi-formal outfits.",
-    price: 129,
     category: "watches",
     arCategory: "watch",
-    stock: 15,
-    images: [{ url: "https://images.unsplash.com/photo-1602174528421-6c3e5b00e565?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
-    aiTags: ["dress watch", "rose gold", "formal accessory", "wedding guest", "elegant watch", "minimal style"]
+    basePrice: 119,
+    baseDescription:
+      "Polished wristwear that adds a refined finish to formal looks, office fits, and dress-casual outfits.",
+    tags: ["watch", "wristwear", "formal accessory", "minimal design", "classic style"],
+    names: [
+      "Rose Gold Minimal Watch",
+      "Atlas Steel Timepiece",
+      "Monochrome Dial Watch",
+      "Harbor Classic Watch",
+      "Daymark Slim Watch",
+      "Luxe Edge Chrono",
+      "Evening Gold Wristwatch",
+      "Slate Face Watch",
+      "Midtown Signature Timepiece",
+      "Aster Black Dial Watch",
+      "Crest Leather Watch",
+      "Pulse Silver Watch"
+    ]
   },
   {
-    key: "ivory-linen-shirt",
-    name: "Ivory Linen Shirt",
-    description: "Breathable linen shirt ideal for coastal ceremonies, day parties, and relaxed formal dressing.",
-    price: 69,
     category: "shirts",
     arCategory: "shirt",
-    stock: 28,
-    images: [{ url: "https://images.unsplash.com/photo-1740711152088-88a009e877bb?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
-    aiTags: ["linen shirt", "beach wedding", "summer formal", "lightweight shirt", "coastal outfit", "day event"]
+    basePrice: 59,
+    baseDescription:
+      "Breathable shirts built for warm-weather dressing, relaxed tailoring, and polished daily wear.",
+    tags: ["shirt", "linen", "smart casual", "lightweight", "summer outfit"],
+    names: [
+      "Ivory Linen Shirt",
+      "Coastline Button Shirt",
+      "Blue Harbor Linen Top",
+      "Studio White Camp Shirt",
+      "Breeze Fit Formal Shirt",
+      "Oakline Casual Shirt",
+      "Weekend Linen Layer",
+      "Horizon Summer Shirt",
+      "Crisp Day Oxford Shirt",
+      "Shoreline Evening Shirt",
+      "Mariner Roll-Sleeve Shirt",
+      "Cloudline Minimal Shirt"
+    ]
   },
   {
-    key: "obsidian-street-sneakers",
-    name: "Obsidian Street Sneakers",
-    description: "Clean black sneakers built for everyday wear with subtle detailing and comfortable all-day support.",
-    price: 99,
     category: "shoes",
     arCategory: "shoes",
-    stock: 30,
-    images: [{ url: "https://images.unsplash.com/photo-1560857792-215f9e3534ed?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
-    aiTags: ["streetwear shoes", "black sneakers", "casual footwear", "daily style", "comfortable shoes", "minimal sneakers"]
+    basePrice: 89,
+    baseDescription:
+      "Comfort-first footwear with sleek profiles for daily wear, city movement, and elevated casual outfits.",
+    tags: ["shoes", "sneakers", "streetwear", "footwear", "casual look"],
+    names: [
+      "Obsidian Street Sneakers",
+      "Motion Grid Runners",
+      "Ashline Daily Sneakers",
+      "Ridge Court Trainers",
+      "Downtown Leather Sneakers",
+      "Pulse Walk Low Tops",
+      "Metro Pace Shoes",
+      "Nightshift Sport Sneakers",
+      "Cleanline Runner Shoes",
+      "Harbor Track Trainers",
+      "Velocity Mono Sneakers",
+      "Boardwalk Canvas Shoes"
+    ]
   },
   {
-    key: "copper-edge-ring",
-    name: "Copper Edge Ring",
-    description: "Modern statement ring with warm metallic tones for stacked accessory looks.",
-    price: 39,
     category: "rings",
     arCategory: "ring",
-    stock: 40,
-    images: [{ url: "https://images.unsplash.com/photo-1675105151596-f2391ab706c2?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
-    aiTags: ["statement ring", "metallic accessory", "stacked jewelry", "warm tone", "minimal jewelry", "daily accessory"]
+    basePrice: 35,
+    baseDescription:
+      "Modern rings with understated shine that work solo or stacked into a statement accessory set.",
+    tags: ["ring", "jewelry", "stacked accessories", "minimal jewelry", "statement piece"],
+    names: [
+      "Copper Edge Ring",
+      "Solstice Band Ring",
+      "Noir Stone Signet",
+      "Aurora Stack Ring",
+      "Cinder Crest Band",
+      "Luna Minimal Ring",
+      "Canyon Metal Ring",
+      "Velvet Alloy Band",
+      "Studio Slim Signet",
+      "Bronze Halo Ring",
+      "Orbit Detail Ring",
+      "Daylight Stacking Band"
+    ]
   },
   {
-    key: "harbor-classic-hat",
-    name: "Harbor Classic Hat",
-    description: "A clean structured hat that works well with travel outfits, sunny weekends, and casual layering.",
-    price: 45,
     category: "hats",
     arCategory: "hat",
-    stock: 20,
-    images: [{ url: "https://images.unsplash.com/photo-1627733041826-77dd65dc5a19?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=1200", publicId: "" }],
-    aiTags: ["classic hat", "sun protection", "casual accessory", "weekend outfit", "travel style", "outdoor look"]
+    basePrice: 39,
+    baseDescription:
+      "Easygoing headwear that adds shape, shade, and a finished touch to travel and weekend looks.",
+    tags: ["hat", "headwear", "weekend outfit", "travel style", "sun protection"],
+    names: [
+      "Harbor Classic Hat",
+      "Desert Sun Cap",
+      "Trailmark Street Hat",
+      "Cove Weekend Hat",
+      "Northline Casual Cap",
+      "Canvas Peak Hat",
+      "Metro Shade Cap",
+      "Voyage Summer Hat",
+      "Seabreeze Travel Hat",
+      "Cinder Utility Cap",
+      "Ridge Brim Hat",
+      "Coastline Minimal Cap"
+    ]
   }
 ];
+
+const productSeeds = productFamilies.flatMap((family, familyIndex) =>
+  family.names.map((name, itemIndex) => {
+    const familyKey = family.category.replace(/s$/, "");
+    const variantNumber = itemIndex + 1;
+    const price = family.basePrice + (itemIndex % 4) * 9 + familyIndex * 2;
+    const stock = 10 + (itemIndex % 6) * 4 + familyIndex;
+    const imageUrl = buildSeedImageUrl(`${familyKey}-${variantNumber}-${name}`);
+
+    return {
+      key: `${familyKey}-${variantNumber}`,
+      name,
+      description: `${family.baseDescription} Variant ${variantNumber} in the ${family.category} collection.`,
+      price,
+      category: family.category,
+      arCategory: family.arCategory,
+      stock,
+      images: [{ url: imageUrl, publicId: "" }],
+      aiTags: [...family.tags, name.toLowerCase(), `${family.category} variant ${variantNumber}`]
+    };
+  })
+);
 
 const seed = async () => {
   if (!process.env.MONGO_URI) {
