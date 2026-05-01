@@ -1,4 +1,4 @@
-import { Suspense, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Environment, OrbitControls, useGLTF } from "@react-three/drei";
 import { useCamera } from "./useCamera.js";
@@ -20,12 +20,46 @@ function ProductModel({ product, pose }) {
   );
 }
 
-export default function ARCanvas({ product }) {
+export default function ARCanvas({ product, onCaptureReady }) {
   const { videoRef, ready, error } = useCamera();
   const { pose } = usePoseDetection(videoRef, ready);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!onCaptureReady) return undefined;
+
+    const capture = () => {
+      const video = videoRef.current;
+      const webglCanvas = containerRef.current?.querySelector("canvas");
+
+      if (!video || !webglCanvas || !video.videoWidth || !video.videoHeight) {
+        throw new Error("AR preview is not ready to capture");
+      }
+
+      const snapshot = document.createElement("canvas");
+      snapshot.width = video.videoWidth;
+      snapshot.height = video.videoHeight;
+
+      const context = snapshot.getContext("2d");
+      if (!context) {
+        throw new Error("Unable to create screenshot canvas");
+      }
+
+      context.translate(snapshot.width, 0);
+      context.scale(-1, 1);
+      context.drawImage(video, 0, 0, snapshot.width, snapshot.height);
+      context.setTransform(1, 0, 0, 1, 0, 0);
+      context.drawImage(webglCanvas, 0, 0, snapshot.width, snapshot.height);
+
+      return snapshot.toDataURL("image/jpeg", 0.92);
+    };
+
+    onCaptureReady(capture);
+    return () => onCaptureReady(null);
+  }, [onCaptureReady, videoRef]);
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+    <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
       <video
         ref={videoRef}
         playsInline

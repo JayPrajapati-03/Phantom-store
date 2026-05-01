@@ -56,22 +56,27 @@ export const generateTags = async ({ name = "", description = "", category = "",
   const response = await client.chat.completions.create({
     model: aiModel,
     temperature: 0.2,
+    response_format: { type: "json_object" },
     messages: [
       {
-        role: "system",
-        content: "Return only a JSON array of short ecommerce search tags."
-      },
-      {
         role: "user",
-        content: JSON.stringify({ name, description, category, arCategory })
+        content: `Generate semantic search tags for this product:
+Name: ${name}
+Category: ${category}
+AR Category: ${arCategory}
+Description: ${description}
+Return ONLY JSON: { "tags": ["tag1","tag2",...] }
+Generate 8-10 descriptive, searchable tags.`
       }
     ]
   });
 
-  return parseJsonArray(response.choices[0]?.message?.content || "[]")
+  const parsed = parseJsonObject(response.choices[0]?.message?.content || "{}", { tags: [] });
+
+  return parseJsonArray(JSON.stringify(parsed.tags || []))
     .map((tag) => String(tag).toLowerCase().trim())
     .filter(Boolean)
-    .slice(0, 20);
+    .slice(0, 10);
 };
 
 export const suggestStyles = async ({ profile = {}, occasion = "", productIds = [], preferences = "" }) => {
@@ -106,7 +111,165 @@ export const suggestStyles = async ({ profile = {}, occasion = "", productIds = 
   return parsed.suggestions || [];
 };
 
+export const suggestComplementaryCategories = async ({
+  productName = "",
+  productCategory = "",
+  category = ""
+}) => {
+  const baseCategory = productCategory || category;
+
+  if (!hasRemoteAi) {
+    const fallbackSuggestions = [
+      "glasses",
+      "jacket",
+      "watch",
+      "bag",
+      "shoes",
+      "hat"
+    ].filter((item) => item.toLowerCase() !== String(baseCategory).toLowerCase());
+
+    return {
+      suggestions: fallbackSuggestions.slice(0, 3),
+      reason: "These picks add balance and contrast to the main look."
+    };
+  }
+
+  const response = await client.chat.completions.create({
+    model: aiModel,
+    temperature: 0.5,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content: "You are a fashion stylist AI for an AR e-commerce app."
+      },
+      {
+        role: "user",
+        content: `The user is trying on: "${productName}" (${baseCategory}).
+Suggest 3 complementary product categories they should also try.
+Return ONLY JSON: { "suggestions": ["category1","category2","category3"], "reason": "short styling tip" }`
+      }
+    ]
+  });
+
+  const parsed = parseJsonObject(response.choices[0]?.message?.content || "{}", {
+    suggestions: [],
+    reason: ""
+  });
+
+  return {
+    suggestions: Array.isArray(parsed.suggestions)
+      ? parsed.suggestions.map((item) => String(item).trim()).filter(Boolean).slice(0, 3)
+      : [],
+    reason: typeof parsed.reason === "string" ? parsed.reason.trim() : ""
+  };
+};
+
+export const rankProductsForSearch = async ({ query = "", products = [] }) => {
+  if (!query) {
+    return [];
+  }
+
+  if (!hasRemoteAi) {
+    const normalizedQuery = query.toLowerCase();
+
+    return products
+      .filter((product) => {
+        const haystack = [
+          product.name,
+          product.description,
+          product.category,
+          ...(product.aiTags || [])
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        return haystack.includes(normalizedQuery);
+      })
+      .map((product) => String(product._id))
+      .slice(0, 12);
+  }
+
+  const catalog = products
+    .map(
+      (product) =>
+        `ID:${product._id} Name:${product.name} Category:${product.category} Tags:${(product.aiTags || []).join(",")}`
+    )
+    .join("\n");
+
+  const response = await client.chat.completions.create({
+    model: aiModel,
+    temperature: 0.2,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "user",
+        content: `User searched: "${query}"
+Product catalog:
+${catalog}
+
+Return ONLY JSON: { "ids": ["id1","id2","id3"] }
+Pick the most relevant product IDs for the search query.`
+      }
+    ]
+  });
+
+  const parsed = parseJsonObject(response.choices[0]?.message?.content || "{}", { ids: [] });
+  return Array.isArray(parsed.ids)
+    ? parsed.ids.map((item) => String(item).trim()).filter(Boolean)
+    : [];
+};
+
 export const reviewOutfit = async ({ items = [], imageDescription = "", occasion = "" }) => {
+  if (typeof items === "object" && items !== null && ("imageBase64" in items || "productName" in items)) {
+    const { imageBase64 = "", productName = "" } = items;
+
+    if (!hasRemoteAi) {
+      return {
+        score: 8,
+        tips: [
+          "Keep the overall look balanced with one standout accessory.",
+          "Match the outfit with clean, occasion-appropriate footwear."
+        ]
+      };
+    }
+
+    const reviewModel = hasOpenRouter ? aiModel : "gpt-4o";
+    const response = await client.chat.completions.create({
+      model: reviewModel,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `The person is trying on: "${productName}".
+Rate this look out of 10 and give 2 styling tips.
+Return ONLY JSON: { "score": number, "tips": ["tip1","tip2"] }`
+            },
+            {
+              type: "image_url",
+              image_url: { url: imageBase64 }
+            }
+          ]
+        }
+      ]
+    });
+
+    const parsed = parseJsonObject(response.choices[0]?.message?.content || "{}", {
+      score: 0,
+      tips: []
+    });
+
+    return {
+      score: Number(parsed.score) || 0,
+      tips: Array.isArray(parsed.tips)
+        ? parsed.tips.map((tip) => String(tip).trim()).filter(Boolean).slice(0, 2)
+        : []
+    };
+  }
+
   if (!hasRemoteAi) {
     return {
       score: 8,

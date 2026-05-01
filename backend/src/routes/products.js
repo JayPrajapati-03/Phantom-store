@@ -4,7 +4,7 @@ import Product from "../models/Product.js";
 import Store from "../models/Store.js";
 import { verifyToken, requireMerchantOrAdmin } from "../middleware/auth.js";
 import { uploadImage, uploadModel } from "../services/cloudinary.js";
-import { generateTags } from "../services/openai.js";
+import { generateTags, rankProductsForSearch } from "../services/openai.js";
 
 const router = express.Router();
 const upload = multer({
@@ -132,18 +132,22 @@ router.get("/", async (req, res, next) => {
 router.get("/search", async (req, res, next) => {
   try {
     const { q = "" } = req.query;
-    const products = await Product.find({
-      $or: [
-        { name: { $regex: q, $options: "i" } },
-        { description: { $regex: q, $options: "i" } },
-        { category: { $regex: q, $options: "i" } },
-        { aiTags: { $regex: q, $options: "i" } }
-      ]
-    }).limit(40);
 
-    res.json({ products });
+    if (!q.trim()) {
+      return res.status(400).json({ message: "q is required" });
+    }
+
+    const allProducts = await Product.find({})
+      .select("name description category aiTags images price modelUrl arCategory stock storeId createdAt")
+      .lean();
+
+    const rankedIds = await rankProductsForSearch({ query: q, products: allProducts });
+    const rankedProducts = new Map(allProducts.map((product) => [String(product._id), product]));
+    const orderedProducts = rankedIds.map((id) => rankedProducts.get(id)).filter(Boolean);
+
+    return res.json({ products: orderedProducts });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
