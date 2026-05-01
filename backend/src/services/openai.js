@@ -106,6 +106,60 @@ export const suggestStyles = async ({ profile = {}, occasion = "", productIds = 
   return parsed.suggestions || [];
 };
 
+export const suggestComplementaryCategories = async ({
+  productName = "",
+  productCategory = "",
+  category = ""
+}) => {
+  const baseCategory = productCategory || category;
+
+  if (!hasRemoteAi) {
+    const fallbackSuggestions = [
+      "glasses",
+      "jacket",
+      "watch",
+      "bag",
+      "shoes",
+      "hat"
+    ].filter((item) => item.toLowerCase() !== String(baseCategory).toLowerCase());
+
+    return {
+      suggestions: fallbackSuggestions.slice(0, 3),
+      reason: "These picks add balance and contrast to the main look."
+    };
+  }
+
+  const response = await client.chat.completions.create({
+    model: aiModel,
+    temperature: 0.5,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content: "You are a fashion stylist AI for an AR e-commerce app."
+      },
+      {
+        role: "user",
+        content: `The user is trying on: "${productName}" (${baseCategory}).
+Suggest 3 complementary product categories they should also try.
+Return ONLY JSON: { "suggestions": ["category1","category2","category3"], "reason": "short styling tip" }`
+      }
+    ]
+  });
+
+  const parsed = parseJsonObject(response.choices[0]?.message?.content || "{}", {
+    suggestions: [],
+    reason: ""
+  });
+
+  return {
+    suggestions: Array.isArray(parsed.suggestions)
+      ? parsed.suggestions.map((item) => String(item).trim()).filter(Boolean).slice(0, 3)
+      : [],
+    reason: typeof parsed.reason === "string" ? parsed.reason.trim() : ""
+  };
+};
+
 export const reviewOutfit = async ({ items = [], imageDescription = "", occasion = "" }) => {
   if (!hasRemoteAi) {
     return {

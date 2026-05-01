@@ -6,6 +6,7 @@ import api from "./utils/api.js";
 import { useAuthStore } from "./store/authStore.js";
 import { useCartStore } from "./store/cartStore.js";
 import { useProductSearch } from "./ai/useProductSearch.js";
+import { useStyleSuggestion } from "./ai/useStyleSuggestion.js";
 
 const shellStyle = {
   minHeight: "100vh",
@@ -152,10 +153,17 @@ function ProductDetail() {
 function TryOn() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
+  const { suggestions, reason, loading, getSuggestions } = useStyleSuggestion();
 
   useEffect(() => {
     api.get(`/products/${id}`).then((res) => setProduct(res.data.product));
   }, [id]);
+
+  useEffect(() => {
+    if (!product?._id) return;
+
+    getSuggestions(product._id, product.category).catch(() => {});
+  }, [getSuggestions, product]);
 
   return (
     <Layout>
@@ -163,6 +171,17 @@ function TryOn() {
       <div style={{ height: 640, border: "1px solid #263044", borderRadius: 8, overflow: "hidden", background: "#05070b" }}>
         {product ? <ARCanvas product={product} /> : <p style={{ padding: 20 }}>Loading AR asset...</p>}
       </div>
+      {product && (
+        <section style={{ marginTop: 24, display: "grid", gap: 14 }}>
+          <div>
+            <h2 style={{ marginBottom: 8 }}>Style suggestions</h2>
+            <p style={{ color: "#abb7ce", margin: 0 }}>
+              {loading ? "Finding matching pieces..." : reason || "Suggested items that pair well with this look."}
+            </p>
+          </div>
+          <ProductGrid products={suggestions} />
+        </section>
+      )}
     </Layout>
   );
 }

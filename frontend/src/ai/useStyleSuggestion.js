@@ -3,17 +3,24 @@ import api from "../utils/api.js";
 
 export function useStyleSuggestion() {
   const [suggestions, setSuggestions] = useState([]);
+  const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const getSuggestions = useCallback(async (payload) => {
+  const getSuggestions = useCallback(async (productIdOrPayload, category) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await api.post("/ai/style-suggest", payload);
-      setSuggestions(response.data.suggestions || []);
-      return response.data.suggestions || [];
+      const payload =
+        typeof productIdOrPayload === "object" && productIdOrPayload !== null
+          ? productIdOrPayload
+          : { productId: productIdOrPayload, category };
+
+      const response = await api.post("/ai/suggest", payload);
+      setSuggestions(response.data.products || []);
+      setReason(response.data.reason || "");
+      return response.data;
     } catch (suggestionError) {
       setError(suggestionError);
       throw suggestionError;
@@ -22,5 +29,5 @@ export function useStyleSuggestion() {
     }
   }, []);
 
-  return { suggestions, loading, error, getSuggestions };
+  return { suggestions, reason, loading, error, getSuggestions };
 }
