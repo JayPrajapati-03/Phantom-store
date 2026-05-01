@@ -56,22 +56,27 @@ export const generateTags = async ({ name = "", description = "", category = "",
   const response = await client.chat.completions.create({
     model: aiModel,
     temperature: 0.2,
+    response_format: { type: "json_object" },
     messages: [
       {
-        role: "system",
-        content: "Return only a JSON array of short ecommerce search tags."
-      },
-      {
         role: "user",
-        content: JSON.stringify({ name, description, category, arCategory })
+        content: `Generate semantic search tags for this product:
+Name: ${name}
+Category: ${category}
+AR Category: ${arCategory}
+Description: ${description}
+Return ONLY JSON: { "tags": ["tag1","tag2",...] }
+Generate 8-10 descriptive, searchable tags.`
       }
     ]
   });
 
-  return parseJsonArray(response.choices[0]?.message?.content || "[]")
+  const parsed = parseJsonObject(response.choices[0]?.message?.content || "{}", { tags: [] });
+
+  return parseJsonArray(JSON.stringify(parsed.tags || []))
     .map((tag) => String(tag).toLowerCase().trim())
     .filter(Boolean)
-    .slice(0, 20);
+    .slice(0, 10);
 };
 
 export const suggestStyles = async ({ profile = {}, occasion = "", productIds = [], preferences = "" }) => {
