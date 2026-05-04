@@ -25,9 +25,51 @@ const aiModel = hasOpenRouter
 
 const hasRemoteAi = hasOpenRouter || hasOpenAI;
 
+const fallbackTags = ({ name = "", category = "", arCategory = "" }) =>
+  [name, category, arCategory]
+    .join(" ")
+    .toLowerCase()
+    .split(/\W+/)
+    .filter(Boolean)
+    .slice(0, 12);
+
+const fallbackComplementaryCategories = (baseCategory = "") => ({
+  suggestions: ["glasses", "jacket", "watch", "bag", "shoes", "hat"]
+    .filter((item) => item.toLowerCase() !== String(baseCategory).toLowerCase())
+    .slice(0, 3),
+  reason: "These picks add balance and contrast to the main look."
+});
+
+const fallbackReview = () => ({
+  score: 8,
+  tips: [
+    "Keep the overall look balanced with one standout accessory.",
+    "Match the outfit with clean, occasion-appropriate footwear."
+  ]
+});
+
+const fallbackOutfitReview = () => ({
+  score: 8,
+  summary: "The outfit is cohesive and ready for everyday wear.",
+  improvements: ["Add contrast with texture or a focused accent color."]
+});
+
+const extractJsonSnippet = (content = "", fallback = "{}") => {
+  const trimmed = String(content || "").trim();
+  if (!trimmed) return fallback;
+
+  const objectMatch = trimmed.match(/\{[\s\S]*\}/);
+  if (objectMatch) return objectMatch[0];
+
+  const arrayMatch = trimmed.match(/\[[\s\S]*\]/);
+  if (arrayMatch) return arrayMatch[0];
+
+  return fallback;
+};
+
 const parseJsonArray = (content, fallback = []) => {
   try {
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(extractJsonSnippet(content, "[]"));
     return Array.isArray(parsed) ? parsed : fallback;
   } catch {
     return fallback;
@@ -36,47 +78,63 @@ const parseJsonArray = (content, fallback = []) => {
 
 const parseJsonObject = (content, fallback = {}) => {
   try {
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(extractJsonSnippet(content, "{}"));
     return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : fallback;
   } catch {
     return fallback;
   }
 };
 
-export const generateTags = async ({ name = "", description = "", category = "", arCategory = "" }) => {
-  if (!hasRemoteAi) {
-    return [name, category, arCategory]
-      .join(" ")
-      .toLowerCase()
-      .split(/\W+/)
-      .filter(Boolean)
-      .slice(0, 12);
-  }
-
+const createTextCompletion = async (prompt, { temperature = 0.3 } = {}) => {
   const response = await client.chat.completions.create({
     model: aiModel,
-    temperature: 0.2,
-    response_format: { type: "json_object" },
+    temperature,
     messages: [
       {
         role: "user",
-        content: `Generate semantic search tags for this product:
-Name: ${name}
-Category: ${category}
-AR Category: ${arCategory}
-Description: ${description}
-Return ONLY JSON: { "tags": ["tag1","tag2",...] }
-Generate 8-10 descriptive, searchable tags.`
+        content: prompt
       }
     ]
   });
 
-  const parsed = parseJsonObject(response.choices[0]?.message?.content || "{}", { tags: [] });
+  return response.choices[0]?.message?.content || "";
+};
 
-  return parseJsonArray(JSON.stringify(parsed.tags || []))
-    .map((tag) => String(tag).toLowerCase().trim())
-    .filter(Boolean)
-    .slice(0, 10);
+const logAiFallback = (scope, error) => {
+  console.warn(`[ai:${scope}] Falling back to local logic: ${error?.message || "Unknown error"}`);
+};
+
+export const generateTags = async ({ name = "", description = "", category = "", arCategory = "" }) => {
+  if (!hasRemoteAi) {
+    return fallbackTags({ name, category, arCategory });
+  }
+
+  try {
+    const content = await createTextCompletion(
+      `Generate semantic search tags for this product.
+Name: ${name}
+Category: ${category}
+AR Category: ${arCategory}
+Description: ${description}
+
+Return only valid JSON in this shape:
+{"tags":["tag1","tag2","tag3"]}
+
+Generate 8 to 10 descriptive, searchable tags.`,
+      { temperature: 0.2 }
+    );
+
+    const parsed = parseJsonObject(content, { tags: [] });
+    const tags = Array.isArray(parsed.tags) ? parsed.tags : [];
+
+    return tags
+      .map((tag) => String(tag).toLowerCase().trim())
+      .filter(Boolean)
+      .slice(0, 10);
+  } catch (error) {
+    logAiFallback("generateTags", error);
+    return fallbackTags({ name, category, arCategory });
+  }
 };
 
 export const suggestStyles = async ({ profile = {}, occasion = "", productIds = [], preferences = "" }) => {
@@ -90,25 +148,29 @@ export const suggestStyles = async ({ profile = {}, occasion = "", productIds = 
     ];
   }
 
-  const response = await client.chat.completions.create({
-    model: aiModel,
-    temperature: 0.6,
-    response_format: { type: "json_object" },
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a fashion stylist for an AR commerce app. Return JSON with a suggestions array. Each suggestion has title, reason, palette, and stylingTips."
-      },
-      {
-        role: "user",
-        content: JSON.stringify({ profile, occasion, productIds, preferences })
-      }
-    ]
-  });
+  try {
+    const content = await createTextCompletion(
+      `You are a fashion stylist for an AR commerce app.
+Return only valid JSON in this shape:
+{"suggestions":[{"title":"","reason":"","palette":[],"stylingTips":[]}]}
 
-  const parsed = parseJsonObject(response.choices[0]?.message?.content || "{}");
-  return parsed.suggestions || [];
+Input:
+${JSON.stringify({ profile, occasion, productIds, preferences })}`,
+      { temperature: 0.6 }
+    );
+
+    const parsed = parseJsonObject(content, { suggestions: [] });
+    return Array.isArray(parsed.suggestions) ? parsed.suggestions : [];
+  } catch (error) {
+    logAiFallback("suggestStyles", error);
+    return [
+      {
+        title: "Clean everyday fit",
+        reason: "Balances neutral colors with one statement accessory.",
+        items: productIds
+      }
+    ];
+  }
 };
 
 export const suggestComplementaryCategories = async ({
@@ -119,50 +181,34 @@ export const suggestComplementaryCategories = async ({
   const baseCategory = productCategory || category;
 
   if (!hasRemoteAi) {
-    const fallbackSuggestions = [
-      "glasses",
-      "jacket",
-      "watch",
-      "bag",
-      "shoes",
-      "hat"
-    ].filter((item) => item.toLowerCase() !== String(baseCategory).toLowerCase());
-
-    return {
-      suggestions: fallbackSuggestions.slice(0, 3),
-      reason: "These picks add balance and contrast to the main look."
-    };
+    return fallbackComplementaryCategories(baseCategory);
   }
 
-  const response = await client.chat.completions.create({
-    model: aiModel,
-    temperature: 0.5,
-    response_format: { type: "json_object" },
-    messages: [
-      {
-        role: "system",
-        content: "You are a fashion stylist AI for an AR e-commerce app."
-      },
-      {
-        role: "user",
-        content: `The user is trying on: "${productName}" (${baseCategory}).
+  try {
+    const content = await createTextCompletion(
+      `The user is trying on "${productName}" in the category "${baseCategory}".
 Suggest 3 complementary product categories they should also try.
-Return ONLY JSON: { "suggestions": ["category1","category2","category3"], "reason": "short styling tip" }`
-      }
-    ]
-  });
 
-  const parsed = parseJsonObject(response.choices[0]?.message?.content || "{}", {
-    suggestions: [],
-    reason: ""
-  });
+Return only valid JSON in this shape:
+{"suggestions":["category1","category2","category3"],"reason":"short styling tip"}`,
+      { temperature: 0.5 }
+    );
 
-  return {
-    suggestions: Array.isArray(parsed.suggestions)
-      ? parsed.suggestions.map((item) => String(item).trim()).filter(Boolean).slice(0, 3)
-      : [],
-    reason: typeof parsed.reason === "string" ? parsed.reason.trim() : ""
-  };
+    const parsed = parseJsonObject(content, {
+      suggestions: [],
+      reason: ""
+    });
+
+    return {
+      suggestions: Array.isArray(parsed.suggestions)
+        ? parsed.suggestions.map((item) => String(item).trim()).filter(Boolean).slice(0, 3)
+        : [],
+      reason: typeof parsed.reason === "string" ? parsed.reason.trim() : ""
+    };
+  } catch (error) {
+    logAiFallback("suggestComplementaryCategories", error);
+    return fallbackComplementaryCategories(baseCategory);
+  }
 };
 
 export const rankProductsForSearch = async ({ query = "", products = [] }) => {
@@ -170,10 +216,8 @@ export const rankProductsForSearch = async ({ query = "", products = [] }) => {
     return [];
   }
 
-  if (!hasRemoteAi) {
-    const normalizedQuery = query.toLowerCase();
-
-    return products
+  const localRank = () =>
+    products
       .filter((product) => {
         const haystack = [
           product.name,
@@ -184,70 +228,67 @@ export const rankProductsForSearch = async ({ query = "", products = [] }) => {
           .join(" ")
           .toLowerCase();
 
-        return haystack.includes(normalizedQuery);
+        return haystack.includes(query.toLowerCase());
       })
       .map((product) => String(product._id))
       .slice(0, 12);
+
+  if (!hasRemoteAi) {
+    return localRank();
   }
 
-  const catalog = products
-    .map(
-      (product) =>
-        `ID:${product._id} Name:${product.name} Category:${product.category} Tags:${(product.aiTags || []).join(",")}`
-    )
-    .join("\n");
+  try {
+    const catalog = products
+      .map(
+        (product) =>
+          `ID:${product._id} Name:${product.name} Category:${product.category} Tags:${(product.aiTags || []).join(",")}`
+      )
+      .join("\n");
 
-  const response = await client.chat.completions.create({
-    model: aiModel,
-    temperature: 0.2,
-    response_format: { type: "json_object" },
-    messages: [
-      {
-        role: "user",
-        content: `User searched: "${query}"
+    const content = await createTextCompletion(
+      `User searched for "${query}".
 Product catalog:
 ${catalog}
 
-Return ONLY JSON: { "ids": ["id1","id2","id3"] }
-Pick the most relevant product IDs for the search query.`
-      }
-    ]
-  });
+Return only valid JSON in this shape:
+{"ids":["id1","id2","id3"]}
 
-  const parsed = parseJsonObject(response.choices[0]?.message?.content || "{}", { ids: [] });
-  return Array.isArray(parsed.ids)
-    ? parsed.ids.map((item) => String(item).trim()).filter(Boolean)
-    : [];
+Pick the most relevant product IDs for the search query.`,
+      { temperature: 0.2 }
+    );
+
+    const parsed = parseJsonObject(content, { ids: [] });
+    return Array.isArray(parsed.ids)
+      ? parsed.ids.map((item) => String(item).trim()).filter(Boolean)
+      : localRank();
+  } catch (error) {
+    logAiFallback("rankProductsForSearch", error);
+    return localRank();
+  }
 };
 
-export const reviewOutfit = async ({ items = [], imageDescription = "", occasion = "" }) => {
+export const reviewOutfit = async ({ items = [], imageDescription = "", occasion = "" } = {}) => {
   if (typeof items === "object" && items !== null && ("imageBase64" in items || "productName" in items)) {
     const { imageBase64 = "", productName = "" } = items;
 
     if (!hasRemoteAi) {
-      return {
-        score: 8,
-        tips: [
-          "Keep the overall look balanced with one standout accessory.",
-          "Match the outfit with clean, occasion-appropriate footwear."
-        ]
-      };
+      return fallbackReview();
     }
 
     try {
       const reviewModel = hasOpenRouter ? aiModel : "gpt-4o";
       const response = await client.chat.completions.create({
         model: reviewModel,
-        response_format: { type: "json_object" },
         messages: [
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: `The person is trying on: "${productName}".
+                text: `The person is trying on "${productName}".
 Rate this look out of 10 and give 2 styling tips.
-Return ONLY JSON: { "score": number, "tips": ["tip1","tip2"] }`
+Return only valid JSON in this shape:
+{"score":8,"tips":["tip1","tip2"]}`
               },
               {
                 type: "image_url",
@@ -267,9 +308,10 @@ Return ONLY JSON: { "score": number, "tips": ["tip1","tip2"] }`
         score: Number(parsed.score) || 8,
         tips: Array.isArray(parsed.tips)
           ? parsed.tips.map((tip) => String(tip).trim()).filter(Boolean).slice(0, 2)
-          : ["The overall look is visible, but camera framing can improve the review."]
+          : fallbackReview().tips
       };
-    } catch {
+    } catch (error) {
+      logAiFallback("reviewOutfit:image", error);
       return {
         score: 8,
         tips: [
@@ -281,29 +323,23 @@ Return ONLY JSON: { "score": number, "tips": ["tip1","tip2"] }`
   }
 
   if (!hasRemoteAi) {
-    return {
-      score: 8,
-      summary: "The outfit is cohesive and ready for everyday wear.",
-      improvements: ["Add contrast with texture or a focused accent color."]
-    };
+    return fallbackOutfitReview();
   }
 
-  const response = await client.chat.completions.create({
-    model: aiModel,
-    temperature: 0.4,
-    response_format: { type: "json_object" },
-    messages: [
-      {
-        role: "system",
-        content:
-          "Review an outfit for fit, color, occasion, and styling coherence. Return JSON with score, summary, strengths, and improvements."
-      },
-      {
-        role: "user",
-        content: JSON.stringify({ items, imageDescription, occasion })
-      }
-    ]
-  });
+  try {
+    const content = await createTextCompletion(
+      `Review an outfit for fit, color, occasion, and styling coherence.
+Return only valid JSON in this shape:
+{"score":8,"summary":"...","strengths":["..."],"improvements":["..."]}
 
-  return parseJsonObject(response.choices[0]?.message?.content || "{}");
+Input:
+${JSON.stringify({ items, imageDescription, occasion })}`,
+      { temperature: 0.4 }
+    );
+
+    return parseJsonObject(content, fallbackOutfitReview());
+  } catch (error) {
+    logAiFallback("reviewOutfit:text", error);
+    return fallbackOutfitReview();
+  }
 };

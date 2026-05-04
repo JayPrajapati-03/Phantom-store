@@ -106,6 +106,7 @@ export default function AdminPanel() {
   const [form, setForm] = useState(emptyForm);
   const [imageFiles, setImageFiles] = useState([]);
   const [modelFile, setModelFile] = useState(null);
+  const [formError, setFormError] = useState("");
 
   const activeStoreId = selectedStoreId || stores[0]?._id || "";
   const activeStore = stores.find((store) => store._id === activeStoreId) || stores[0] || null;
@@ -143,13 +144,32 @@ export default function AdminPanel() {
     setForm(emptyForm);
     setImageFiles([]);
     setModelFile(null);
+    setFormError("");
+  };
+
+  const validateForm = () => {
+    if (!String(form.name || "").trim()) return "Product name is required";
+    if (!String(form.description || "").trim()) return "Description is required";
+    if (form.price === "" || Number.isNaN(Number(form.price))) return "Valid price is required";
+    if (!String(form.category || "").trim()) return "Category is required";
+    if (!String(form.arCategory || "").trim()) return "AR category is required";
+    if (!editingId && !modelFile) return "A 3D model file is required when creating a product";
+    return "";
   };
 
   const submit = async (event) => {
     event.preventDefault();
+    setFormError("");
 
     if (!activeStoreId) {
       toast.error("Create or select a store before uploading products");
+      return;
+    }
+
+    const validationMessage = validateForm();
+    if (validationMessage) {
+      setFormError(validationMessage);
+      toast.error(validationMessage);
       return;
     }
 
@@ -171,7 +191,9 @@ export default function AdminPanel() {
       resetForm();
       await loadData();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Unable to save product");
+      const message = error.response?.data?.message || "Unable to save product";
+      setFormError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -190,6 +212,7 @@ export default function AdminPanel() {
     });
     setImageFiles([]);
     setModelFile(null);
+    setFormError("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -314,6 +337,20 @@ export default function AdminPanel() {
             )}
           </div>
 
+          {!!formError && (
+            <div
+              style={{
+                border: "1px solid rgba(248, 113, 113, 0.35)",
+                borderRadius: 14,
+                background: "rgba(69, 24, 38, 0.45)",
+                color: "#fecdd3",
+                padding: "12px 14px"
+              }}
+            >
+              {formError}
+            </div>
+          )}
+
           <div style={{ display: "grid", gridTemplateColumns: "1.3fr 0.7fr", gap: 14 }}>
             <label style={labelStyle}>
               Product name
@@ -381,6 +418,11 @@ export default function AdminPanel() {
               <p style={{ margin: 0, color: "#8ea0c2", fontSize: 13 }}>
                 {modelFile?.name || "Attach a GLB or GLTF model for AR try-on."}
               </p>
+              {!editingId && (
+                <p style={{ margin: 0, color: "#fda4af", fontSize: 12 }}>
+                  Required for new products.
+                </p>
+              )}
             </div>
           </div>
 
