@@ -8,7 +8,9 @@ export const useAuthStore = create(
       token: null,
       login: (user, token) => set({ user, token }),
       logout: () => set({ user: null, token: null }),
-      isAdmin: () => get().user?.role === "admin"
+      isAdmin: () => get().user?.role === "admin",
+      isMerchant: () => get().user?.role === "merchant",
+      isCustomer: () => get().user?.role === "customer"
     }),
     {
       name: "phantom-auth"
