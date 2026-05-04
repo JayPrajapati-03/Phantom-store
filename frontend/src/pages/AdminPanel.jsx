@@ -71,6 +71,7 @@ const statusColors = {
 
 const categoryOptions = ["glasses", "jackets", "bags", "watches", "shirts", "shoes", "rings", "hats"];
 const arCategoryOptions = ["glasses", "jacket", "bag", "watch", "shirt", "shoes", "ring", "hat"];
+const productsPerPage = 12;
 
 const emptyForm = {
   name: "",
@@ -103,6 +104,7 @@ export default function AdminPanel() {
   const [editingId, setEditingId] = useState(null);
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const [productQuery, setProductQuery] = useState("");
+  const [productPage, setProductPage] = useState(1);
   const [form, setForm] = useState(emptyForm);
   const [imageFiles, setImageFiles] = useState([]);
   const [modelFile, setModelFile] = useState(null);
@@ -138,6 +140,10 @@ export default function AdminPanel() {
   useEffect(() => {
     loadData().catch(() => {});
   }, []);
+
+  useEffect(() => {
+    setProductPage(1);
+  }, [activeStoreId, productQuery]);
 
   const resetForm = () => {
     setEditingId(null);
@@ -258,6 +264,12 @@ export default function AdminPanel() {
     () => filteredProducts.reduce((sum, product) => sum + Number(product.price || 0) * Number(product.stock || 0), 0),
     [filteredProducts]
   );
+
+  const totalProductPages = Math.max(1, Math.ceil(filteredProducts.length / productsPerPage));
+  const paginatedProducts = useMemo(() => {
+    const start = (productPage - 1) * productsPerPage;
+    return filteredProducts.slice(start, start + productsPerPage);
+  }, [filteredProducts, productPage]);
 
   const pendingOrders = orders.filter((order) => ["pending", "paid", "processing"].includes(order.status)).length;
   const selectedImageNames = Array.from(imageFiles || []).map((file) => file.name).join(", ");
@@ -499,44 +511,85 @@ export default function AdminPanel() {
         {loading ? (
           <p style={{ margin: 0, color: "#b8c4de" }}>Loading products...</p>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
-            {filteredProducts.map((product) => (
-              <article key={product._id} style={{ ...cardStyle, overflow: "hidden", display: "grid" }}>
-                <img
-                  src={getProductImageSrc(product)}
-                  alt={product.name}
-                  style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", background: "#0c1119" }}
-                />
-                <div style={{ padding: 16, display: "grid", gap: 12 }}>
-                  <div style={{ display: "grid", gap: 6 }}>
-                    <strong style={{ fontSize: 18 }}>{product.name}</strong>
-                    <p style={{ margin: 0, color: "#8ea0c2", lineHeight: 1.5 }}>
-                      {product.description?.slice(0, 110) || "No description yet."}
-                    </p>
+          <div style={{ display: "grid", gap: 18 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+              {paginatedProducts.map((product) => (
+                <article key={product._id} style={{ ...cardStyle, overflow: "hidden", display: "grid" }}>
+                  <img
+                    src={getProductImageSrc(product)}
+                    alt={product.name}
+                    style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", background: "#0c1119" }}
+                  />
+                  <div style={{ padding: 16, display: "grid", gap: 12 }}>
+                    <div style={{ display: "grid", gap: 6 }}>
+                      <strong style={{ fontSize: 18 }}>{product.name}</strong>
+                      <p style={{ margin: 0, color: "#8ea0c2", lineHeight: 1.5 }}>
+                        {product.description?.slice(0, 110) || "No description yet."}
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ padding: "6px 10px", borderRadius: 999, background: "rgba(93, 139, 255, 0.14)", color: "#a9c3ff", fontSize: 12 }}>
+                        {product.category}
+                      </span>
+                      <span style={{ padding: "6px 10px", borderRadius: 999, background: "rgba(138, 92, 255, 0.14)", color: "#c4b5fd", fontSize: 12 }}>
+                        AR {product.arCategory}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, color: "#dce4f9" }}>
+                      <span>${Number(product.price).toFixed(2)}</span>
+                      <span>Stock {product.stock}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      <button style={buttonStyle} onClick={() => startEdit(product)}>
+                        Edit
+                      </button>
+                      <button style={dangerStyle} onClick={() => removeProduct(product._id)}>
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <span style={{ padding: "6px 10px", borderRadius: 999, background: "rgba(93, 139, 255, 0.14)", color: "#a9c3ff", fontSize: 12 }}>
-                      {product.category}
-                    </span>
-                    <span style={{ padding: "6px 10px", borderRadius: 999, background: "rgba(138, 92, 255, 0.14)", color: "#c4b5fd", fontSize: 12 }}>
-                      AR {product.arCategory}
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, color: "#dce4f9" }}>
-                    <span>${Number(product.price).toFixed(2)}</span>
-                    <span>Stock {product.stock}</span>
-                  </div>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <button style={buttonStyle} onClick={() => startEdit(product)}>
-                      Edit
-                    </button>
-                    <button style={dangerStyle} onClick={() => removeProduct(product._id)}>
-                      Delete
-                    </button>
-                  </div>
+                </article>
+              ))}
+            </div>
+
+            {filteredProducts.length > productsPerPage && (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <p style={{ margin: 0, color: "#aab6d0" }}>
+                  Showing {(productPage - 1) * productsPerPage + 1}-{Math.min(productPage * productsPerPage, filteredProducts.length)} of {filteredProducts.length} products
+                </p>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    style={secondaryStyle}
+                    disabled={productPage === 1}
+                    onClick={() => setProductPage((current) => Math.max(1, current - 1))}
+                  >
+                    Previous
+                  </button>
+                  <span
+                    style={{
+                      padding: "12px 14px",
+                      borderRadius: 14,
+                      background: "rgba(38, 48, 68, 0.88)",
+                      color: "#dce4f9",
+                      minWidth: 92,
+                      textAlign: "center",
+                      fontWeight: 700
+                    }}
+                  >
+                    {productPage} / {totalProductPages}
+                  </span>
+                  <button
+                    type="button"
+                    style={secondaryStyle}
+                    disabled={productPage === totalProductPages}
+                    onClick={() => setProductPage((current) => Math.min(totalProductPages, current + 1))}
+                  >
+                    Next
+                  </button>
                 </div>
-              </article>
-            ))}
+              </div>
+            )}
           </div>
         )}
       </section>
