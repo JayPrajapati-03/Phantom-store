@@ -2,60 +2,49 @@ import React from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useCartStore } from "../store/cartStore.js";
-import { getProductImageSrc } from "../utils/productImages.js";
-
-const cardStyle = {
-  background: "#141925",
-  border: "1px solid #252d3d",
-  borderRadius: 8,
-  overflow: "hidden"
-};
-
-const buttonStyle = {
-  border: "0",
-  borderRadius: 6,
-  background: "#7c5cff",
-  color: "#fff",
-  padding: "10px 14px",
-  cursor: "pointer",
-  fontWeight: 700,
-  textDecoration: "none",
-  display: "inline-block"
-};
-
-const secondaryLinkStyle = {
-  ...buttonStyle,
-  background: "#263044"
-};
+import { getProductImageSrc, getCategoryLabel } from "../utils/productImages.js";
 
 export default function ProductCard({ product }) {
   const addItem = useCartStore((state) => state.addItem);
 
   return (
-    <article style={cardStyle}>
-      <img
-        src={getProductImageSrc(product)}
-        alt={product.name}
-        style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", display: "block" }}
-      />
-      <div style={{ padding: 14 }}>
-        <h3 style={{ margin: "0 0 8px" }}>{product.name}</h3>
-        <p style={{ margin: "0 0 12px", color: "#abb7ce" }}>${Number(product.price).toFixed(2)}</p>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Link to={`/try-on/${product._id}`} style={buttonStyle}>
-            Try On
+    <article className="product-card">
+      <div className="product-img-wrap">
+        <img
+          src={getProductImageSrc(product)}
+          alt={product.name}
+          loading="lazy"
+        />
+        <span className="category-badge badge badge-accent">
+          {getCategoryLabel(product)}
+        </span>
+        <div className="product-overlay">
+          <Link
+            to={`/try-on/${product._id}`}
+            className="btn btn-primary"
+            style={{ fontSize: "0.8rem", padding: "8px 14px" }}
+          >
+            ✦ Try On
           </Link>
           <button
-            style={secondaryLinkStyle}
-            onClick={() => {
+            className="btn btn-secondary"
+            style={{ fontSize: "0.8rem", padding: "8px 14px" }}
+            onClick={(e) => {
+              e.stopPropagation();
               addItem(product);
-              toast.success("Added to cart");
+              toast.success(`${product.name} added to cart`);
             }}
           >
-            Add to Cart
+            + Cart
           </button>
         </div>
       </div>
+      <Link to={`/products/${product._id}`} style={{ textDecoration: "none" }}>
+        <div className="product-info">
+          <h3 className="product-name">{product.name}</h3>
+          <p className="product-price">${Number(product.price).toFixed(2)}</p>
+        </div>
+      </Link>
     </article>
   );
 }

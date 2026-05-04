@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import AdminLogin from "./pages/AdminLogin.jsx";
 import AdminPanel from "./pages/AdminPanel.jsx";
 import Cart from "./pages/Cart.jsx";
 import Checkout from "./pages/Checkout.jsx";
@@ -12,25 +13,42 @@ import OrderConfirmed from "./pages/OrderConfirmed.jsx";
 import ProductDetail from "./pages/ProductDetail.jsx";
 import TryOn from "./pages/TryOn.jsx";
 
-const shellStyle = {
-  minHeight: "100vh",
-  background: "#0b0d12",
-  color: "#f5f7fb",
-  fontFamily: "Inter, ui-sans-serif, system-ui, Arial, sans-serif"
-};
-
-const mainStyle = {
-  maxWidth: 1180,
-  margin: "0 auto",
-  padding: 24
-};
-
 export default function App() {
   return (
     <BrowserRouter>
-      <div style={shellStyle}>
+      {/* Animated background orbs */}
+      <div style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 0,
+        pointerEvents: "none",
+        overflow: "hidden"
+      }}>
+        <div style={{
+          position: "absolute",
+          width: 600,
+          height: 600,
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(124,92,255,0.06) 0%, transparent 70%)",
+          top: "-200px",
+          right: "-100px",
+          animation: "float 20s ease-in-out infinite"
+        }} />
+        <div style={{
+          position: "absolute",
+          width: 500,
+          height: 500,
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 70%)",
+          bottom: "-150px",
+          left: "-100px",
+          animation: "float 25s ease-in-out infinite reverse"
+        }} />
+      </div>
+
+      <div style={{ position: "relative", zIndex: 1, minHeight: "100vh" }}>
         <Navbar />
-        <main style={mainStyle}>
+        <main className="container" style={{ paddingTop: "var(--space-xl)", paddingBottom: "var(--space-3xl)" }}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/products/:id" element={<ProductDetail />} />
@@ -39,6 +57,7 @@ export default function App() {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/confirmed" element={<OrderConfirmed />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
             <Route
               path="/admin"
               element={
@@ -49,8 +68,21 @@ export default function App() {
             />
           </Routes>
         </main>
-        <Toaster position="top-right" />
       </div>
+
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: "#161b28",
+            color: "#f0f2f8",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: "12px",
+            fontSize: "0.9rem",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
+          }
+        }}
+      />
     </BrowserRouter>
   );
 }

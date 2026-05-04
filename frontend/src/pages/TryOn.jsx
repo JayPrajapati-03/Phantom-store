@@ -7,16 +7,6 @@ import ProductGrid from "../components/ProductGrid.jsx";
 import { useParams } from "react-router-dom";
 import { useCartStore } from "../store/cartStore.js";
 
-const buttonStyle = {
-  border: "0",
-  borderRadius: 10,
-  background: "#7c5cff",
-  color: "#fff",
-  padding: "12px 18px",
-  cursor: "pointer",
-  fontWeight: 700
-};
-
 export default function TryOn() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
@@ -54,7 +44,6 @@ export default function TryOn() {
       api.get("/products?limit=1").then((res) => setProduct(res.data.products?.[0] || null));
       return;
     }
-
     api.get(`/products/${id}`).then((res) => setProduct(res.data.product));
   }, [id]);
 
@@ -64,11 +53,7 @@ export default function TryOn() {
   }, [getSuggestions, product]);
 
   const saveLook = () => {
-    if (!captureReviewImage) {
-      toast.error("AR preview is not ready yet");
-      return;
-    }
-
+    if (!captureReviewImage) { toast.error("AR preview is not ready yet"); return; }
     try {
       const imageUrl = captureReviewImage();
       const link = document.createElement("a");
@@ -88,14 +73,10 @@ export default function TryOn() {
 
   const getAiReview = async () => {
     if (!product || !captureReviewImage) return;
-
     try {
       setReviewLoading(true);
       const imageBase64 = captureReviewImage();
-      const response = await api.post("/ai/review", {
-        imageBase64,
-        productName: product.name
-      });
+      const response = await api.post("/ai/review", { imageBase64, productName: product.name });
       setReview({
         score: Number(response.data?.score) || 8,
         tips: Array.isArray(response.data?.tips) && response.data.tips.length
@@ -110,25 +91,23 @@ export default function TryOn() {
   };
 
   return (
-    <section style={{ display: "grid", gap: 18 }}>
-      <h1 style={{ margin: 0 }}>AR Try On</h1>
+    <section style={{ display: "grid", gap: "var(--space-xl)", animation: "fadeInUp 0.4s var(--ease-out)" }}>
+      <div>
+        <h1 style={{ margin: "0 0 4px" }}>AR Try On</h1>
+        <p style={{ color: "var(--text-muted)", fontSize: "0.9375rem" }}>See how it looks on you in real-time</p>
+      </div>
+
+      {/* Camera source */}
       <section style={{ display: "grid", gap: 8 }}>
-        <label style={{ color: "#abb7ce" }} htmlFor="camera-select">
+        <label style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }} htmlFor="camera-select">
           Camera source
         </label>
         <select
           id="camera-select"
+          className="select"
           value={selectedCameraId}
-          onChange={(event) => setSelectedCameraId(event.target.value)}
-          style={{
-            width: "100%",
-            maxWidth: 420,
-            border: "1px solid #2a3346",
-            borderRadius: 8,
-            background: "#111722",
-            color: "#fff",
-            padding: "12px 14px"
-          }}
+          onChange={(e) => setSelectedCameraId(e.target.value)}
+          style={{ maxWidth: 420 }}
         >
           {cameraDevices.map((device) => (
             <option key={device.deviceId} value={device.deviceId}>
@@ -136,11 +115,20 @@ export default function TryOn() {
             </option>
           ))}
         </select>
-        <p style={{ margin: 0, color: "#abb7ce" }}>
-          Active camera: {cameraDevices.find((device) => device.deviceId === activeCameraId)?.label || "Loading camera..."}
+        <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.8125rem" }}>
+          Active: {cameraDevices.find((d) => d.deviceId === activeCameraId)?.label || "Loading camera..."}
         </p>
       </section>
-      <div style={{ height: 640, border: "1px solid #263044", borderRadius: 8, overflow: "hidden", background: "#05070b" }}>
+
+      {/* AR Canvas */}
+      <div style={{
+        height: 640,
+        borderRadius: "var(--radius-lg)",
+        overflow: "hidden",
+        background: "var(--bg-base)",
+        border: "1px solid var(--border-light)",
+        boxShadow: "var(--shadow-lg), 0 0 60px rgba(124,92,255,0.06)"
+      }}>
         {product ? (
           <ARCanvas
             product={product}
@@ -149,53 +137,84 @@ export default function TryOn() {
             onCameraChange={handleCameraChange}
           />
         ) : (
-          <p style={{ padding: 20 }}>Loading AR asset...</p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--text-muted)" }}>
+            Loading AR asset...
+          </div>
         )}
       </div>
+
+      {/* Action bar */}
       {product && (
-        <section
-          style={{
-            display: "grid",
-            gap: 14,
-            padding: 16,
-            border: "1px solid #252d3d",
-            borderRadius: 12,
-            background: "#111722"
-          }}
-        >
+        <section className="glass-strong" style={{ padding: "var(--space-lg)", display: "grid", gap: "var(--space-md)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <div style={{ display: "grid", gap: 4 }}>
-              <strong style={{ fontSize: 18 }}>{product.name}</strong>
-              <p style={{ color: "#abb7ce", margin: 0 }}>
-                Save your look, add this item to cart, or ask AI for styling feedback.
+              <strong style={{ fontSize: "1.1rem" }}>{product.name}</strong>
+              <p style={{ color: "var(--text-muted)", margin: 0, fontSize: "0.875rem" }}>
+                Save your look, add to cart, or ask AI for styling feedback.
               </p>
             </div>
-            <p style={{ margin: 0, fontWeight: 700 }}>${Number(product.price).toFixed(2)}</p>
+            <p style={{
+              margin: 0, fontWeight: 800, fontSize: "1.25rem",
+              background: "linear-gradient(135deg, var(--accent-light), #818cf8)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
+            }}>${Number(product.price).toFixed(2)}</p>
           </div>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <button style={buttonStyle} onClick={saveLook} disabled={!captureReviewImage}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button className="btn btn-secondary" onClick={saveLook} disabled={!captureReviewImage}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
               Save look
             </button>
-            <button style={buttonStyle} onClick={addCurrentProductToCart}>
+            <button className="btn btn-primary" onClick={addCurrentProductToCart}>
               Add to cart
             </button>
-            <button style={buttonStyle} onClick={getAiReview} disabled={reviewLoading || !captureReviewImage}>
+            <button className="btn btn-secondary" onClick={getAiReview} disabled={reviewLoading || !captureReviewImage}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a5 5 0 0 1 5 5v3a5 5 0 0 1-10 0V7a5 5 0 0 1 5-5Z" /><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /></svg>
               {reviewLoading ? "Reviewing..." : "Get AI review"}
             </button>
           </div>
         </section>
       )}
+
+      {/* AI Review score card */}
       {review && (
-        <section style={{ background: "#141925", border: "1px solid #252d3d", borderRadius: 8, padding: 16, display: "grid", gap: 10 }}>
-          <h2 style={{ margin: 0 }}>AI outfit review</h2>
-          <p style={{ margin: 0 }}>Score: {review.score}/10</p>
-          {!!review.tips?.length && review.tips.map((tip, index) => <p key={`${index}-${tip}`} style={{ margin: 0, color: "#abb7ce" }}>{index + 1}. {tip}</p>)}
+        <section className="glass" style={{ padding: "var(--space-lg)", display: "grid", gap: "var(--space-md)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-md)" }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: "50%",
+              background: `conic-gradient(var(--accent) ${review.score * 10}%, var(--bg-elevated) 0%)`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "1rem", fontWeight: 800, flexShrink: 0
+            }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: "50%",
+                background: "var(--bg-surface)",
+                display: "flex", alignItems: "center", justifyContent: "center"
+              }}>{review.score}</div>
+            </div>
+            <div>
+              <h2 style={{ margin: 0, fontSize: "1.1rem" }}>AI Outfit Review</h2>
+              <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.875rem" }}>Score out of 10</p>
+            </div>
+          </div>
+          {!!review.tips?.length && (
+            <div style={{ display: "grid", gap: 8 }}>
+              {review.tips.map((tip, index) => (
+                <p key={`${index}-${tip}`} style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.9375rem", paddingLeft: 12, borderLeft: "2px solid var(--accent)" }}>
+                  {tip}
+                </p>
+              ))}
+            </div>
+          )}
         </section>
       )}
-      <section style={{ display: "grid", gap: 12 }}>
+
+      {/* Suggestions */}
+      <section style={{ display: "grid", gap: "var(--space-md)" }}>
         <div>
-          <h2 style={{ marginBottom: 8 }}>Pairs well with...</h2>
-          <p style={{ color: "#abb7ce", margin: 0 }}>{loading ? "Finding matching products..." : reason || "Suggested complementary items."}</p>
+          <div className="section-label" style={{ marginBottom: 8 }}>Pairs well with</div>
+          <p style={{ color: "var(--text-secondary)", margin: 0, fontSize: "0.9375rem" }}>
+            {loading ? "Finding matching products..." : reason || "Suggested complementary items."}
+          </p>
         </div>
         <ProductGrid products={suggestions} />
       </section>

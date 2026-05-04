@@ -5,24 +5,7 @@ import api from "../utils/api.js";
 import { useCartStore } from "../store/cartStore.js";
 import { useStyleSuggestion } from "../ai/useStyleSuggestion.js";
 import ProductGrid from "../components/ProductGrid.jsx";
-import { getProductImageSrc } from "../utils/productImages.js";
-
-const buttonStyle = {
-  border: "0",
-  borderRadius: 10,
-  background: "#7c5cff",
-  color: "#fff",
-  padding: "12px 18px",
-  cursor: "pointer",
-  fontWeight: 700,
-  textDecoration: "none",
-  display: "inline-block"
-};
-
-const secondaryStyle = {
-  ...buttonStyle,
-  background: "#263044"
-};
+import { getProductImageSrc, getCategoryLabel } from "../utils/productImages.js";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -45,17 +28,58 @@ export default function ProductDetail() {
     return product.images?.length ? product.images.map((item) => item.url) : [getProductImageSrc(product)];
   }, [product]);
 
-  if (!product) return <p>Loading product...</p>;
+  if (!product) {
+    return (
+      <div style={{ display: "grid", gap: 24, animation: "fadeIn 0.5s var(--ease-out)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 32 }}>
+          <div style={{
+            aspectRatio: "4/3", borderRadius: "var(--radius-lg)", overflow: "hidden",
+            background: "linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-elevated) 50%, var(--bg-surface) 75%)",
+            backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite"
+          }} />
+          <div style={{ display: "grid", gap: 16, alignContent: "start" }}>
+            <div style={{ height: 32, width: "60%", borderRadius: 8, background: "var(--bg-elevated)" }} />
+            <div style={{ height: 24, width: "30%", borderRadius: 6, background: "var(--bg-elevated)" }} />
+            <div style={{ height: 80, borderRadius: 8, background: "var(--bg-elevated)" }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const displaySrc = images[imageIndex] || getProductImageSrc(product);
+  // Skip picsum URLs for display
+  const safeSrc = displaySrc.includes("picsum.photos") ? getProductImageSrc(product) : displaySrc;
 
   return (
-    <section style={{ display: "grid", gap: 24 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 420px)", gap: 24 }}>
+    <section style={{ display: "grid", gap: "var(--space-2xl)", animation: "fadeInUp 0.5s var(--ease-out)" }}>
+      {/* Breadcrumb */}
+      <nav style={{ display: "flex", gap: 8, fontSize: "0.875rem", color: "var(--text-muted)" }}>
+        <Link to="/" style={{ color: "var(--text-secondary)", transition: "color 0.2s" }}>Home</Link>
+        <span>›</span>
+        <span style={{ color: "var(--text-primary)" }}>{product.name}</span>
+      </nav>
+
+      {/* Product layout */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 420px)",
+        gap: "var(--space-xl)"
+      }}>
+        {/* Images */}
         <section style={{ display: "grid", gap: 12 }}>
-          <img
-            src={images[imageIndex] || getProductImageSrc(product)}
-            alt={product.name}
-            style={{ width: "100%", borderRadius: 14, aspectRatio: "4 / 3", objectFit: "cover" }}
-          />
+          <div style={{
+            borderRadius: "var(--radius-lg)",
+            overflow: "hidden",
+            border: "1px solid var(--border-subtle)",
+            boxShadow: "var(--shadow-md)"
+          }}>
+            <img
+              src={safeSrc}
+              alt={product.name}
+              style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover" }}
+            />
+          </div>
           {images.length > 1 && (
             <div style={{ display: "flex", gap: 10, overflowX: "auto" }}>
               {images.map((src, index) => (
@@ -63,37 +87,60 @@ export default function ProductDetail() {
                   key={`${src}-${index}`}
                   onClick={() => setImageIndex(index)}
                   style={{
-                    padding: 0,
-                    border: imageIndex === index ? "2px solid #7c5cff" : "1px solid #2a3346",
-                    borderRadius: 10,
+                    padding: 2,
+                    border: imageIndex === index ? "2px solid var(--accent)" : "2px solid transparent",
+                    borderRadius: "var(--radius-sm)",
                     background: "transparent",
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    transition: "all 0.2s var(--ease-out)",
+                    opacity: imageIndex === index ? 1 : 0.6
                   }}
                 >
-                  <img src={src} alt={`${product.name} ${index + 1}`} style={{ width: 90, height: 72, objectFit: "cover", borderRadius: 8 }} />
+                  <img src={src.includes("picsum.photos") ? getProductImageSrc(product) : src} alt={`${product.name} ${index + 1}`} style={{ width: 80, height: 60, objectFit: "cover", borderRadius: 6 }} />
                 </button>
               ))}
             </div>
           )}
         </section>
 
-        <section style={{ display: "grid", gap: 14 }}>
-          <h1 style={{ margin: 0 }}>{product.name}</h1>
-          <p style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>${Number(product.price).toFixed(2)}</p>
-          <p style={{ color: "#abb7ce", margin: 0 }}>{product.description}</p>
-          <p style={{ margin: 0, color: product.stock > 0 ? "#8bd3c7" : "#ff8b8b" }}>
-            {product.stock > 0 ? `In stock: ${product.stock}` : "Out of stock"}
+        {/* Info */}
+        <section className="glass" style={{ padding: "var(--space-lg)", display: "grid", gap: 16, alignContent: "start" }}>
+          <span className="badge badge-accent">{getCategoryLabel(product)}</span>
+          <h1 style={{ margin: 0, fontSize: "1.75rem" }}>{product.name}</h1>
+          <p style={{
+            fontSize: "1.75rem", fontWeight: 800, margin: 0,
+            background: "linear-gradient(135deg, var(--accent-light), #818cf8)",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
+          }}>
+            ${Number(product.price).toFixed(2)}
           </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Link to={`/try-on/${product._id}`} style={buttonStyle}>
+          <p style={{ color: "var(--text-secondary)", margin: 0, lineHeight: 1.7 }}>{product.description}</p>
+          <p style={{
+            margin: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: "0.875rem",
+            fontWeight: 600,
+            color: product.stock > 0 ? "var(--success)" : "var(--error)"
+          }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: "50%",
+              background: product.stock > 0 ? "var(--success)" : "var(--error)"
+            }} />
+            {product.stock > 0 ? `In stock · ${product.stock} available` : "Out of stock"}
+          </p>
+          <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
+            <Link to={`/try-on/${product._id}`} className="btn btn-primary" style={{ justifyContent: "center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
               Try On in AR
             </Link>
             <button
-              style={secondaryStyle}
-              onClick={() => {
-                addItem(product);
-                toast.success("Added to cart");
-              }}
+              className="btn btn-secondary"
+              style={{ justifyContent: "center" }}
+              onClick={() => { addItem(product); toast.success("Added to cart"); }}
             >
               Add to Cart
             </button>
@@ -101,11 +148,12 @@ export default function ProductDetail() {
         </section>
       </div>
 
-      <section style={{ display: "grid", gap: 14 }}>
+      {/* AI Suggestions */}
+      <section style={{ display: "grid", gap: "var(--space-md)" }}>
         <div>
-          <h2 style={{ marginBottom: 8 }}>AI Style Suggestions</h2>
-          <p style={{ margin: 0, color: "#abb7ce" }}>
-            {loading ? "Loading complementary picks..." : reason || "Pairs well with these products."}
+          <div className="section-label" style={{ marginBottom: 8 }}>AI Style Suggestions</div>
+          <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.9375rem" }}>
+            {loading ? "Finding complementary picks..." : reason || "Pairs well with these products."}
           </p>
         </div>
         <ProductGrid products={suggestions} />
