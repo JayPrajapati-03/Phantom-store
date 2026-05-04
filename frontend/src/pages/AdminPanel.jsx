@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import api from "../utils/api.js";
-import { getProductImageSrc } from "../utils/productImages.js";
+import { getProductImageSrc, handleImageError } from "../utils/productImages.js";
 
 const panelStyle = {
   border: "1px solid rgba(101, 123, 168, 0.22)",
@@ -503,6 +503,7 @@ export default function AdminPanel() {
                 src={getProductImageSrc({ name: form.name || "Preview product", arCategory: form.arCategory, images: [] })}
                 alt="Product preview"
                 style={{ width: "100%", height: "100%", objectFit: "cover", background: "#0c1119" }}
+                onError={handleImageError}
               />
               <div style={{ padding: 18, display: "grid", gap: 10 }}>
                 <strong style={{ fontSize: 20 }}>{form.name || "Live product preview"}</strong>
@@ -559,6 +560,7 @@ export default function AdminPanel() {
                     src={getProductImageSrc(product)}
                     alt={product.name}
                     style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", background: "#0c1119" }}
+                    onError={handleImageError}
                   />
                   <div style={{ padding: 16, display: "grid", gap: 12 }}>
                     <div style={{ display: "grid", gap: 6 }}>

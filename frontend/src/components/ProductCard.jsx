@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useCartStore } from "../store/cartStore.js";
-import { getProductImageSrc, getCategoryLabel } from "../utils/productImages.js";
+import { getProductImageSrc, getCategoryLabel, handleImageError } from "../utils/productImages.js";
 
 export default function ProductCard({ product }) {
   const addItem = useCartStore((state) => state.addItem);
@@ -14,6 +14,7 @@ export default function ProductCard({ product }) {
           src={getProductImageSrc(product)}
           alt={product.name}
           loading="lazy"
+          onError={handleImageError}
         />
         <span className="category-badge badge badge-accent">
           {getCategoryLabel(product)}

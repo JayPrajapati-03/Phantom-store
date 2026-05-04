@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import api from "../utils/api.js";
 import { useAuthStore } from "../store/authStore.js";
-import { getProductImageSrc } from "../utils/productImages.js";
+import { getProductImageSrc, handleImageError } from "../utils/productImages.js";
 
 const emptyForm = { name: "", description: "", price: "", category: "", arCategory: "", stock: "" };
 const emptyStoreForm = { name: "", description: "" };
@@ -216,7 +216,7 @@ export default function MerchantPanel() {
                     display: "grid", gridTemplateColumns: "64px 1fr auto",
                     gap: "var(--space-md)", padding: "var(--space-md)", alignItems: "center"
                   }}>
-                    <img src={getProductImageSrc(product)} alt={product.name} style={{ width: 64, height: 48, objectFit: "cover", borderRadius: "var(--radius-sm)" }} />
+                    <img src={getProductImageSrc(product)} alt={product.name} style={{ width: 64, height: 48, objectFit: "cover", borderRadius: "var(--radius-sm)" }} onError={handleImageError} />
                     <div>
                       <p style={{ margin: 0, fontWeight: 600 }}>{product.name}</p>
                       <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.8125rem" }}>

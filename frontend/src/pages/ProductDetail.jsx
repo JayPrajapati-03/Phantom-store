@@ -5,7 +5,7 @@ import api from "../utils/api.js";
 import { useCartStore } from "../store/cartStore.js";
 import { useStyleSuggestion } from "../ai/useStyleSuggestion.js";
 import ProductGrid from "../components/ProductGrid.jsx";
-import { getProductImageSrc, getCategoryLabel } from "../utils/productImages.js";
+import { getProductImageSrc, getCategoryLabel, handleImageError } from "../utils/productImages.js";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -78,6 +78,7 @@ export default function ProductDetail() {
               src={safeSrc}
               alt={product.name}
               style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover" }}
+              onError={handleImageError}
             />
           </div>
           {images.length > 1 && (
@@ -96,7 +97,7 @@ export default function ProductDetail() {
                     opacity: imageIndex === index ? 1 : 0.6
                   }}
                 >
-                  <img src={src.includes("picsum.photos") ? getProductImageSrc(product) : src} alt={`${product.name} ${index + 1}`} style={{ width: 80, height: 60, objectFit: "cover", borderRadius: 6 }} />
+                  <img src={src.includes("picsum.photos") ? getProductImageSrc(product) : src} alt={`${product.name} ${index + 1}`} style={{ width: 80, height: 60, objectFit: "cover", borderRadius: 6 }} onError={handleImageError} />
                 </button>
               ))}
             </div>

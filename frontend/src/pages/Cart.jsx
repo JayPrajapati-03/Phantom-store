@@ -2,7 +2,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCartStore } from "../store/cartStore.js";
 import { useAuthStore } from "../store/authStore.js";
-import { getProductImageSrc } from "../utils/productImages.js";
+import { getProductImageSrc, handleImageError } from "../utils/productImages.js";
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -58,6 +58,7 @@ export default function Cart() {
                 src={getProductImageSrc(item)}
                 alt={item.name}
                 style={{ width: 72, height: 54, objectFit: "cover", borderRadius: "var(--radius-sm)" }}
+                onError={handleImageError}
               />
               <div>
                 <p style={{ margin: 0, fontWeight: 600 }}>{item.name}</p>
