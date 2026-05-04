@@ -95,6 +95,12 @@ const statBlock = (label, value, accent) => ({
   border: "1px solid rgba(255, 255, 255, 0.08)"
 });
 
+const dashboardTabStyle = (active) => ({
+  border: active ? "1px solid rgba(136, 167, 255, 0.45)" : "1px solid rgba(255, 255, 255, 0.08)",
+  boxShadow: active ? "0 16px 34px rgba(93, 139, 255, 0.16)" : "none",
+  transform: active ? "translateY(-1px)" : "none"
+});
+
 export default function AdminPanel() {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -105,6 +111,7 @@ export default function AdminPanel() {
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const [productQuery, setProductQuery] = useState("");
   const [productPage, setProductPage] = useState(1);
+  const [activeView, setActiveView] = useState("products");
   const [form, setForm] = useState(emptyForm);
   const [imageFiles, setImageFiles] = useState([]);
   const [modelFile, setModelFile] = useState(null);
@@ -314,18 +321,48 @@ export default function AdminPanel() {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
-          <div style={statBlock("Products", filteredProducts.length, "linear-gradient(135deg, rgba(93, 139, 255, 0.16), rgba(31, 39, 57, 0.92))")}>
+          <button
+            type="button"
+            onClick={() => setActiveView("products")}
+            style={{
+              ...statBlock("Products", filteredProducts.length, "linear-gradient(135deg, rgba(93, 139, 255, 0.16), rgba(31, 39, 57, 0.92))"),
+              ...dashboardTabStyle(activeView === "products"),
+              textAlign: "left",
+              color: "inherit",
+              cursor: "pointer"
+            }}
+          >
             <span style={{ color: "#9bb5ec", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.12em" }}>Products</span>
             <strong style={{ fontSize: 30 }}>{filteredProducts.length}</strong>
-          </div>
-          <div style={statBlock("Orders", orders.length, "linear-gradient(135deg, rgba(138, 92, 255, 0.16), rgba(31, 39, 57, 0.92))")}>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveView("orders")}
+            style={{
+              ...statBlock("Orders", orders.length, "linear-gradient(135deg, rgba(138, 92, 255, 0.16), rgba(31, 39, 57, 0.92))"),
+              ...dashboardTabStyle(activeView === "orders"),
+              textAlign: "left",
+              color: "inherit",
+              cursor: "pointer"
+            }}
+          >
             <span style={{ color: "#b4a7ff", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.12em" }}>Orders</span>
             <strong style={{ fontSize: 30 }}>{orders.length}</strong>
-          </div>
-          <div style={statBlock("Open Orders", pendingOrders, "linear-gradient(135deg, rgba(250, 204, 21, 0.12), rgba(31, 39, 57, 0.92))")}>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveView("orders")}
+            style={{
+              ...statBlock("Open Orders", pendingOrders, "linear-gradient(135deg, rgba(250, 204, 21, 0.12), rgba(31, 39, 57, 0.92))"),
+              ...dashboardTabStyle(activeView === "orders"),
+              textAlign: "left",
+              color: "inherit",
+              cursor: "pointer"
+            }}
+          >
             <span style={{ color: "#facc15", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.12em" }}>Open Orders</span>
             <strong style={{ fontSize: 30 }}>{pendingOrders}</strong>
-          </div>
+          </button>
           <div style={statBlock("Inventory Value", `$${totalInventoryValue.toFixed(0)}`, "linear-gradient(135deg, rgba(74, 222, 128, 0.12), rgba(31, 39, 57, 0.92))")}>
             <span style={{ color: "#86efac", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.12em" }}>Inventory Value</span>
             <strong style={{ fontSize: 30 }}>{`$${totalInventoryValue.toFixed(0)}`}</strong>
@@ -333,6 +370,7 @@ export default function AdminPanel() {
         </div>
       </section>
 
+      {activeView === "products" && (
       <section style={{ display: "grid", gridTemplateColumns: "minmax(320px, 1.05fr) minmax(320px, 1fr)", gap: 24 }}>
         <form onSubmit={submit} style={{ ...panelStyle, padding: 24, display: "grid", gap: 20 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "start" }}>
@@ -493,7 +531,9 @@ export default function AdminPanel() {
           </div>
         </section>
       </section>
+      )}
 
+      {activeView === "products" && (
       <section style={{ ...panelStyle, padding: 24, display: "grid", gap: 18 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", gap: 16, flexWrap: "wrap" }}>
           <div style={{ display: "grid", gap: 8 }}>
@@ -593,7 +633,9 @@ export default function AdminPanel() {
           </div>
         )}
       </section>
+      )}
 
+      {activeView === "orders" && (
       <section style={{ ...panelStyle, padding: 24, display: "grid", gap: 18 }}>
         <div style={{ display: "grid", gap: 8 }}>
           <p style={{ margin: 0, color: "#8ea7db", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>
@@ -655,6 +697,7 @@ export default function AdminPanel() {
           })}
         </div>
       </section>
+      )}
     </section>
   );
 }
