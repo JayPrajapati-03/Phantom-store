@@ -194,15 +194,24 @@ export default function AdminPanel() {
       if (modelFile) payload.append("model", modelFile);
 
       if (editingId) {
-        await api.put(`/products/${editingId}`, payload);
+        const res = await api.put(`/products/${editingId}`, payload);
+        const updatedProduct = res.data.product;
+        if (updatedProduct) {
+          setProducts((current) => current.map((p) => (p._id === editingId ? updatedProduct : p)));
+        }
         toast.success("Product updated");
       } else {
-        await api.post("/products", payload);
+        const res = await api.post("/products", payload);
+        const newProduct = res.data.product;
+        if (newProduct) {
+          setProducts((current) => [newProduct, ...current]);
+        }
         toast.success("Product created");
       }
 
       resetForm();
-      await loadData();
+      // Only refresh in background if needed, but local state is already updated
+      loadData().catch(() => {});
     } catch (error) {
       const message = error.response?.data?.message || "Unable to save product";
       setFormError(message);
