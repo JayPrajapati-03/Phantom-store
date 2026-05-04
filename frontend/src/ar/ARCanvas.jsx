@@ -67,6 +67,7 @@ export default function ARCanvas({ product, onCaptureReady, preferredDeviceId, o
     <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
       <video
         ref={videoRef}
+        autoPlay
         playsInline
         muted
         style={{
@@ -78,7 +79,16 @@ export default function ARCanvas({ product, onCaptureReady, preferredDeviceId, o
           transform: "scaleX(-1)"
         }}
       />
-      {error && <div style={{ position: "absolute", zIndex: 2, padding: 16 }}>Camera unavailable: {error.message}</div>}
+      {!ready && !error && (
+        <div style={{ position: "absolute", zIndex: 2, padding: 16, color: "#f5f7fb" }}>
+          Requesting camera access...
+        </div>
+      )}
+      {error && (
+        <div style={{ position: "absolute", zIndex: 2, padding: 16, color: "#f5f7fb" }}>
+          Camera unavailable: {error.message}
+        </div>
+      )}
       <Canvas
         gl={{ alpha: true, antialias: true }}
         camera={{ position: [0, 0, 5], fov: 45 }}

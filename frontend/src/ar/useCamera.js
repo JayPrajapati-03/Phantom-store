@@ -33,16 +33,32 @@ export function useCamera({ video = true, audio = false, facingMode = "user", pr
     let active = true;
     let currentStream = null;
 
+    const stopStream = (mediaStream) => {
+      mediaStream?.getTracks().forEach((track) => track.stop());
+    };
+
+    const loadDevices = async () => {
+      const availableDevices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = availableDevices.filter((device) => device.kind === "videoinput");
+
+      if (active) {
+        setDevices(videoDevices);
+      }
+
+      return videoDevices;
+    };
+
     const startCamera = async () => {
       try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("Camera access is not supported in this browser.");
+        }
+
         setError(null);
         setReady(false);
+        stopStream(currentStream);
 
-        const availableDevices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = availableDevices.filter((device) => device.kind === "videoinput");
-        if (active) {
-          setDevices(videoDevices);
-        }
+        const videoDevices = await loadDevices();
 
         const selectedDevice =
           videoDevices.find((device) => device.deviceId === preferredDeviceId) ||
@@ -70,19 +86,28 @@ export function useCamera({ video = true, audio = false, facingMode = "user", pr
         currentStream = mediaStream;
 
         if (!active) {
-          mediaStream.getTracks().forEach((track) => track.stop());
+          stopStream(mediaStream);
           return;
         }
 
         setStream(mediaStream);
-        setActiveDeviceId(selectedDevice?.deviceId || "");
+        const activeTrack = mediaStream.getVideoTracks()[0];
+        const activeSettings = activeTrack?.getSettings?.() || {};
+        const resolvedDeviceId = activeSettings.deviceId || selectedDevice?.deviceId || "";
+        setActiveDeviceId(resolvedDeviceId);
 
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
+          videoRef.current.muted = true;
+          videoRef.current.playsInline = true;
           await videoRef.current.play();
           setReady(true);
         }
+
+        await loadDevices();
       } catch (cameraError) {
+        stopStream(currentStream);
+        setStream(null);
         setError(cameraError);
       }
     };
@@ -92,7 +117,11 @@ export function useCamera({ video = true, audio = false, facingMode = "user", pr
     return () => {
       active = false;
       setReady(false);
-      currentStream?.getTracks().forEach((track) => track.stop());
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.srcObject = null;
+      }
+      stopStream(currentStream);
     };
   }, [audio, facingMode, preferredDeviceId, video]);
 
