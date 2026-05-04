@@ -55,6 +55,38 @@ const normalizeTags = (value) =>
     .map((tag) => String(tag).toLowerCase().trim())
     .filter(Boolean);
 
+const validateProductPayload = (payload, { isCreate = false, existingProduct = null } = {}) => {
+  const missingFields = [];
+  const requiredTextFields = ["name", "description", "category", "arCategory"];
+
+  for (const field of requiredTextFields) {
+    const nextValue = payload[field] ?? existingProduct?.[field];
+    if (!String(nextValue || "").trim()) {
+      missingFields.push(field);
+    }
+  }
+
+  const nextModelUrl = payload.modelUrl ?? existingProduct?.modelUrl;
+  if (!String(nextModelUrl || "").trim()) {
+    missingFields.push("modelUrl");
+  }
+
+  const nextPrice = payload.price ?? existingProduct?.price;
+  if (nextPrice === undefined || Number.isNaN(Number(nextPrice))) {
+    missingFields.push("price");
+  }
+
+  if (isCreate && missingFields.length) {
+    return `Missing required product fields: ${missingFields.join(", ")}`;
+  }
+
+  if (!isCreate && missingFields.length) {
+    return `Product update is incomplete. Required fields missing: ${missingFields.join(", ")}`;
+  }
+
+  return null;
+};
+
 const buildProductPayload = async (body, files = {}) => {
   const payload = { ...body };
   const imageFiles = [...(files.images || []), ...(files.image || [])];
@@ -168,6 +200,12 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", verifyToken, requireMerchantOrAdmin, productUpload, async (req, res, next) => {
   try {
     const payload = await buildProductPayload(req.body, req.files);
+    const validationMessage = validateProductPayload(payload, { isCreate: true });
+
+    if (validationMessage) {
+      return res.status(400).json({ message: validationMessage });
+    }
+
     const store = await Store.findById(payload.storeId);
 
     if (!store) {
@@ -210,15 +248,61 @@ router.put("/:id", verifyToken, requireMerchantOrAdmin, productUpload, async (re
     }
 
     const payload = await buildProductPayload(req.body, req.files);
+    const validationMessage = validateProductPayload(payload, {
+      isCreate: false,
+      existingProduct: product
+    });
 
-    Object.assign(product, payload);
-
-    if (!payload.aiTags && (payload.name || payload.description || payload.category || payload.arCategory)) {
-      product.aiTags = await generateTags(product);
+    if (validationMessage) {
+      return res.status(400).json({ message: validationMessage });
     }
 
-    await product.save();
-    return res.json({ product });
+    const nextStoreId = payload.storeId || String(product.storeId._id || product.storeId);
+    const store = await Store.findById(nextStoreId);
+
+    if (!store) {
+      return res.status(400).json({ message: "Store not found" });
+    }
+
+    if (req.user.role !== "admin" && String(store.ownerId) !== String(req.user._id)) {
+      return res.status(403).json({ message: "You can only update products in your store" });
+    }
+
+    const nextData = {
+      ...product.toObject(),
+      ...payload,
+      storeId: nextStoreId
+    };
+
+    if (!payload.aiTags && (payload.name || payload.description || payload.category || payload.arCategory)) {
+      nextData.aiTags = await generateTags(nextData);
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...payload,
+        storeId: nextStoreId,
+        ...(nextData.aiTags ? { aiTags: nextData.aiTags } : {})
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (String(product.storeId._id || product.storeId) !== String(store._id)) {
+      await Promise.all([
+        Store.updateOne({ _id: product.storeId._id || product.storeId }, { $pull: { products: product._id } }),
+        Store.updateOne({ _id: store._id }, { $addToSet: { products: product._id } })
+      ]);
+    }
+
+    return res.json({ product: updatedProduct });
   } catch (error) {
     return next(error);
   }

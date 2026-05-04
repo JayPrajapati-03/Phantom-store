@@ -9,6 +9,22 @@ import {
 } from "../services/openai.js";
 
 const router = express.Router();
+const categoryAliases = {
+  glasses: ["glasses"],
+  jacket: ["jacket", "jackets"],
+  bag: ["bag", "bags"],
+  watch: ["watch", "watches"],
+  shirt: ["shirt", "shirts"],
+  shoes: ["shoes"],
+  ring: ["ring", "rings"],
+  hat: ["hat", "hats"]
+};
+
+const expandCategories = (categories = []) =>
+  categories.flatMap((item) => {
+    const key = String(item).trim().toLowerCase().replace(/\s+/g, "-");
+    return categoryAliases[key] || [key];
+  });
 
 router.post("/style-suggest", verifyToken, async (req, res, next) => {
   try {
@@ -67,9 +83,11 @@ router.post("/suggest", async (req, res, next) => {
       .filter(Boolean)
       .filter((item, index, array) => array.indexOf(item) === index);
 
+    const categoryPool = expandCategories(categories);
+
     const suggested = await Product.find({
       _id: { $ne: product._id },
-      category: { $in: categories }
+      category: { $in: categoryPool }
     }).limit(6);
 
     return res.json({
