@@ -12,7 +12,7 @@ const defaultModel = "https://modelviewer.dev/shared-assets/models/Astronaut.glb
 const categoryModels = {
   glasses: "https://modelviewer.dev/shared-assets/models/Sunglasses.glb",
   shoes: "https://modelviewer.dev/shared-assets/models/MaterialsVariantsShoe.glb",
-  hat: "https://modelviewer.dev/shared-assets/models/Astronaut.glb" // Astronaut for now, but will use hat positioning
+  hat: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF-Binary/Duck.glb"
 };
 const buildSeedImageUrl = (imageId) => `https://picsum.photos/id/${imageId}/1200/900`;
 
