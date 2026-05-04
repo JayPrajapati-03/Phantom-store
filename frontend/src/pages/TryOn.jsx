@@ -16,6 +16,7 @@ export default function TryOn() {
   const [cameraDevices, setCameraDevices] = useState([]);
   const [selectedCameraId, setSelectedCameraId] = useState("");
   const [activeCameraId, setActiveCameraId] = useState("");
+  const [permissionGranted, setPermissionGranted] = useState(false);
   const { suggestions, reason, loading, getSuggestions } = useStyleSuggestion();
   const addItem = useCartStore((state) => state.addItem);
 
@@ -127,20 +128,66 @@ export default function TryOn() {
         overflow: "hidden",
         background: "var(--bg-base)",
         border: "1px solid var(--border-light)",
-        boxShadow: "var(--shadow-lg), 0 0 60px rgba(124,92,255,0.06)"
+        boxShadow: "var(--shadow-lg), 0 0 60px rgba(124,92,255,0.06)",
+        position: "relative"
       }}>
-        {product ? (
+        {product && !permissionGranted && (
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 10,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 20,
+            background: "rgba(11, 13, 18, 0.9)",
+            backdropFilter: "blur(8px)",
+            padding: 40,
+            textAlign: "center"
+          }}>
+            <div style={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              background: "rgba(124, 92, 255, 0.15)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--accent)"
+            }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+            </div>
+            <div>
+              <h3 style={{ margin: "0 0 8px" }}>Camera Access Required</h3>
+              <p style={{ color: "var(--text-muted)", maxWidth: 320, margin: 0 }}>
+                To see the AR effect, we need permission to use your camera.
+              </p>
+            </div>
+            <button
+              className="btn btn-primary"
+              onClick={() => setPermissionGranted(true)}
+              style={{ padding: "12px 32px" }}
+            >
+              Enable Camera
+            </button>
+          </div>
+        )}
+        {product && permissionGranted ? (
           <ARCanvas
             product={product}
             onCaptureReady={handleCaptureReady}
             preferredDeviceId={selectedCameraId}
             onCameraChange={handleCameraChange}
           />
-        ) : (
+        ) : !product ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--text-muted)" }}>
             Loading AR asset...
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Action bar */}

@@ -100,8 +100,12 @@ export function useCamera({ video = true, audio = false, facingMode = "user", pr
           videoRef.current.srcObject = mediaStream;
           videoRef.current.muted = true;
           videoRef.current.playsInline = true;
-          await videoRef.current.play();
-          setReady(true);
+          try {
+            await videoRef.current.play();
+            if (active) setReady(true);
+          } catch (e) {
+            if (e.name !== "AbortError") throw e;
+          }
         }
 
         await loadDevices();

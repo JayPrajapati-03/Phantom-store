@@ -91,12 +91,12 @@ export function getModelPosition(poseOrKeypoints, arCategory, videoSize) {
   if (category === "hat" || category === "cap" || category === "helmet") {
     return {
       position: keypointTo3D(
-        faceCenter ? { ...faceCenter, y: faceCenter.y - faceWidth * 0.9 } : null,
+        faceCenter ? { ...faceCenter, y: faceCenter.y - faceWidth * 0.55 } : null,
         videoSize,
         -1.6
       ),
       rotation: new THREE.Euler(0, 0, 0),
-      scale: Math.max(faceWidth / 360, 0.16)
+      scale: Math.max(faceWidth / 140, 0.32)
     };
   }
 

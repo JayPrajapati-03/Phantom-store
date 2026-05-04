@@ -8,7 +8,12 @@ import User from "../models/User.js";
 
 dotenv.config();
 
-const modelUrl = "https://modelviewer.dev/shared-assets/models/Astronaut.glb";
+const defaultModel = "https://modelviewer.dev/shared-assets/models/Astronaut.glb";
+const categoryModels = {
+  glasses: "https://modelviewer.dev/shared-assets/models/Sunglasses.glb",
+  shoes: "https://modelviewer.dev/shared-assets/models/MaterialsVariantsShoe.glb",
+  hat: "https://modelviewer.dev/shared-assets/models/Astronaut.glb" // Astronaut for now, but will use hat positioning
+};
 const buildSeedImageUrl = (imageId) => `https://picsum.photos/id/${imageId}/1200/900`;
 
 const productFamilies = [
@@ -194,20 +199,16 @@ const productSeeds = productFamilies.flatMap((family, familyIndex) =>
   family.names.map((name, itemIndex) => {
     const familyKey = family.category.replace(/s$/, "");
     const variantNumber = itemIndex + 1;
-    const price = family.basePrice + (itemIndex % 4) * 9 + familyIndex * 2;
-    const stock = 10 + (itemIndex % 6) * 4 + familyIndex;
-    const imageId = 10 + familyIndex * 20 + itemIndex;
-    const imageUrl = buildSeedImageUrl(imageId);
 
     return {
-      key: `${familyKey}-${variantNumber}`,
       name,
       description: `${family.baseDescription} Variant ${variantNumber} in the ${family.category} collection.`,
-      price,
+      price: family.basePrice + (itemIndex % 4) * 9,
       category: family.category,
       arCategory: family.arCategory,
-      stock,
-      images: [{ url: imageUrl, publicId: "" }],
+      stock: 10 + (itemIndex % 6) * 4,
+      images: [{ url: buildSeedImageUrl(10 + familyIndex * 15 + itemIndex), publicId: "" }],
+      modelUrl: categoryModels[familyKey] || defaultModel,
       aiTags: [...family.tags, name.toLowerCase(), `${family.category} variant ${variantNumber}`]
     };
   })
