@@ -4,7 +4,7 @@ import { useAuthStore } from "../store/authStore.js";
 import { useCartStore } from "../store/cartStore.js";
 
 export default function Navbar() {
-  const { user, logout, isAdmin } = useAuthStore();
+  const { user, logout, isAdmin, isMerchant } = useAuthStore();
   const location = useLocation();
   const cartCount = useCartStore((state) =>
     (Array.isArray(state.items) ? state.items : []).reduce(
@@ -31,6 +31,22 @@ export default function Navbar() {
     prevCount.current = cartCount;
   }, [cartCount]);
 
+  // Determine panel link based on role
+  const getPanelLink = () => {
+    if (isAdmin()) return "/admin";
+    if (isMerchant()) return "/merchant";
+    return null;
+  };
+
+  const getPanelLabel = () => {
+    if (isAdmin()) return "Admin";
+    if (isMerchant()) return "Merchant";
+    return null;
+  };
+
+  const panelLink = getPanelLink();
+  const panelLabel = getPanelLabel();
+
   return (
     <header
       style={{
@@ -56,87 +72,58 @@ export default function Navbar() {
         }}
       >
         {/* Logo */}
-        <Link
-          to="/"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            textDecoration: "none"
-          }}
-        >
-          <div
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
-              background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 16,
-              fontWeight: 800,
-              color: "#fff",
-              boxShadow: "0 2px 12px var(--accent-glow)"
-            }}
-          >
-            P
-          </div>
-          <span
-            style={{
-              fontWeight: 800,
-              fontSize: "1.2rem",
-              color: "var(--text-primary)",
-              letterSpacing: "-0.02em"
-            }}
-          >
-            Phantom
-            <span style={{ color: "var(--accent-light)", marginLeft: 4 }}>Store</span>
+        <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: 10,
+            background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 16, fontWeight: 800, color: "#fff",
+            boxShadow: "0 2px 12px var(--accent-glow)"
+          }}>P</div>
+          <span style={{ fontWeight: 800, fontSize: "1.2rem", color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+            Phantom<span style={{ color: "var(--accent-light)", marginLeft: 4 }}>Store</span>
           </span>
         </Link>
 
         {/* Nav */}
         <nav style={{ display: "flex", gap: 20, alignItems: "center" }}>
-          <Link to="/cart" className="nav-link" style={{ position: "relative", display: "flex", alignItems: "center", gap: 6 }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" />
-            </svg>
-            Cart
-            {cartCount > 0 && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: -6,
-                  right: -14,
-                  minWidth: 18,
-                  height: 18,
-                  borderRadius: 9,
-                  background: "var(--accent)",
-                  color: "#fff",
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+          {/* Cart — visible for customers or when no user */}
+          {(!user || user.role === "customer") && (
+            <Link to="/cart" className="nav-link" style={{ position: "relative", display: "flex", alignItems: "center", gap: 6 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+              Cart
+              {cartCount > 0 && (
+                <span style={{
+                  position: "absolute", top: -6, right: -14,
+                  minWidth: 18, height: 18, borderRadius: 9,
+                  background: "var(--accent)", color: "#fff",
+                  fontSize: "0.7rem", fontWeight: 700,
+                  display: "flex", alignItems: "center", justifyContent: "center",
                   padding: "0 5px",
                   animation: cartBump ? "countPulse 0.4s var(--ease-spring)" : "none"
-                }}
-              >
-                {cartCount}
-              </span>
-            )}
-          </Link>
+                }}>{cartCount}</span>
+              )}
+            </Link>
+          )}
 
-          <Link
-            to={isAdmin() ? "/admin" : "/admin/login"}
-            className="nav-link"
-            style={{ display: "flex", alignItems: "center", gap: 6 }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
-            Admin
-          </Link>
+          {/* Role-based panel link — only visible when logged in */}
+          {panelLink && (
+            <Link to={panelLink} className="nav-link" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {isAdmin() ? (
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                ) : (
+                  <>
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                  </>
+                )}
+              </svg>
+              {panelLabel}
+            </Link>
+          )}
 
           {user ? (
             <button
@@ -147,11 +134,7 @@ export default function Navbar() {
               Logout
             </button>
           ) : (
-            <Link
-              to="/login"
-              className="btn btn-primary"
-              style={{ padding: "8px 18px", fontSize: "0.875rem" }}
-            >
+            <Link to="/login" className="btn btn-primary" style={{ padding: "8px 18px", fontSize: "0.875rem" }}>
               Login
             </Link>
           )}

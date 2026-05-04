@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api.js";
 import { useAuthStore } from "../store/authStore.js";
+import toast from "react-hot-toast";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,8 +15,21 @@ export default function Login() {
     setBusy(true);
     try {
       const res = await api.post("/auth/login", form);
-      login(res.data.user, res.data.token);
-      navigate("/");
+      const { user, token } = res.data;
+
+      login(user, token);
+
+      // Route based on role
+      if (user.role === "admin") {
+        toast.success(`Welcome back, ${user.name}!`);
+        navigate("/admin");
+      } else if (user.role === "merchant") {
+        toast.success(`Welcome back, ${user.name}!`);
+        navigate("/merchant");
+      } else {
+        toast.success(`Welcome back, ${user.name}!`);
+        navigate("/");
+      }
     } catch {
       setBusy(false);
     }

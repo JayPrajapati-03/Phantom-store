@@ -3,12 +3,12 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
-import AdminLogin from "./pages/AdminLogin.jsx";
 import AdminPanel from "./pages/AdminPanel.jsx";
 import Cart from "./pages/Cart.jsx";
 import Checkout from "./pages/Checkout.jsx";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
+import MerchantPanel from "./pages/MerchantPanel.jsx";
 import OrderConfirmed from "./pages/OrderConfirmed.jsx";
 import ProductDetail from "./pages/ProductDetail.jsx";
 import TryOn from "./pages/TryOn.jsx";
@@ -50,19 +50,35 @@ export default function App() {
         <Navbar />
         <main className="container" style={{ paddingTop: "var(--space-xl)", paddingBottom: "var(--space-3xl)" }}>
           <Routes>
+            {/* Public */}
             <Route path="/" element={<Home />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/try-on/:id" element={<TryOn />} />
+
+            {/* Customer */}
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/confirmed" element={<OrderConfirmed />} />
+
+            {/* Single login — auto-routes based on role */}
             <Route path="/login" element={<Login />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
+
+            {/* Admin protected */}
             <Route
               path="/admin"
               element={
                 <ProtectedRoute role="admin">
                   <AdminPanel />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Merchant protected */}
+            <Route
+              path="/merchant"
+              element={
+                <ProtectedRoute role="merchant">
+                  <MerchantPanel />
                 </ProtectedRoute>
               }
             />
