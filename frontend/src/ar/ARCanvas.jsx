@@ -22,7 +22,7 @@ function ProductModel({ product, pose }) {
 
 export default function ARCanvas({ product, onCaptureReady, preferredDeviceId, onCameraChange }) {
   const { videoRef, ready, error, devices, activeDeviceId } = useCamera({ preferredDeviceId });
-  const { pose } = usePoseDetection(videoRef, ready);
+  const { pose, keypoints, loading: poseLoading, error: poseError, backend } = usePoseDetection(videoRef, ready);
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -87,6 +87,27 @@ export default function ARCanvas({ product, onCaptureReady, preferredDeviceId, o
       {error && (
         <div style={{ position: "absolute", zIndex: 2, padding: 16, color: "#f5f7fb" }}>
           Camera unavailable: {error.message}
+        </div>
+      )}
+      {ready && !error && (
+        <div
+          style={{
+            position: "absolute",
+            zIndex: 2,
+            right: 12,
+            top: 12,
+            borderRadius: 999,
+            padding: "8px 12px",
+            background: "rgba(11, 13, 18, 0.72)",
+            color: "#f5f7fb",
+            fontSize: 12
+          }}
+        >
+          {poseError
+            ? `Pose error: ${poseError.message}`
+            : poseLoading
+              ? "Loading pose detection..."
+              : `MoveNet ${backend || "ready"} • ${keypoints.length} keypoints`}
         </div>
       )}
       <Canvas
