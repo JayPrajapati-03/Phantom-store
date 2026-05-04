@@ -9,7 +9,13 @@ export function keypointTo3D(keypoint, videoSize = { width: 1280, height: 720 },
   return new THREE.Vector3(x * 2.1, y * 1.2, depth);
 }
 
-const byName = (pose, name) => pose?.keypoints?.find((point) => point.name === name || point.part === name);
+const getKeypoints = (poseOrKeypoints) => {
+  if (Array.isArray(poseOrKeypoints)) return poseOrKeypoints;
+  return poseOrKeypoints?.keypoints || [];
+};
+
+const byName = (poseOrKeypoints, name) =>
+  getKeypoints(poseOrKeypoints).find((point) => point.name === name || point.part === name);
 const normalizeCategory = (value = "") => String(value).trim().toLowerCase();
 const FACE_CATEGORIES = new Set(["face", "glasses", "hat", "cap", "helmet", "earring"]);
 const UPPER_BODY_CATEGORIES = new Set(["upper-body", "shirt", "jacket", "hoodie", "dress", "top"]);
@@ -34,21 +40,22 @@ const distance = (a, b, fallback = 1) => {
   return Math.hypot(a.x - b.x, a.y - b.y);
 };
 
-export function getModelPosition(pose, arCategory, videoSize) {
+export function getModelPosition(poseOrKeypoints, arCategory, videoSize) {
   const category = normalizeCategory(arCategory);
-  const leftEye = byName(pose, "left_eye");
-  const rightEye = byName(pose, "right_eye");
-  const nose = byName(pose, "nose");
-  const leftEar = byName(pose, "left_ear");
-  const rightEar = byName(pose, "right_ear");
-  const leftShoulder = byName(pose, "left_shoulder");
-  const rightShoulder = byName(pose, "right_shoulder");
-  const leftWrist = byName(pose, "left_wrist");
-  const rightWrist = byName(pose, "right_wrist");
-  const leftHip = byName(pose, "left_hip");
-  const rightHip = byName(pose, "right_hip");
-  const leftAnkle = byName(pose, "left_ankle");
-  const rightAnkle = byName(pose, "right_ankle");
+  const keypoints = getKeypoints(poseOrKeypoints);
+  const leftEye = byName(keypoints, "left_eye");
+  const rightEye = byName(keypoints, "right_eye");
+  const nose = byName(keypoints, "nose");
+  const leftEar = byName(keypoints, "left_ear");
+  const rightEar = byName(keypoints, "right_ear");
+  const leftShoulder = byName(keypoints, "left_shoulder");
+  const rightShoulder = byName(keypoints, "right_shoulder");
+  const leftWrist = byName(keypoints, "left_wrist");
+  const rightWrist = byName(keypoints, "right_wrist");
+  const leftHip = byName(keypoints, "left_hip");
+  const rightHip = byName(keypoints, "right_hip");
+  const leftAnkle = byName(keypoints, "left_ankle");
+  const rightAnkle = byName(keypoints, "right_ankle");
 
   const faceCenter = midpoint(leftEye, rightEye) || nose || midpoint(leftEar, rightEar);
   const shoulderCenter = midpoint(leftShoulder, rightShoulder);
@@ -71,7 +78,7 @@ export function getModelPosition(pose, arCategory, videoSize) {
     scale: 0.35
   };
 
-  if (!pose) return defaults;
+  if (!keypoints.length) return defaults;
 
   if (category === "glasses") {
     return {

@@ -1,14 +1,15 @@
-import React, { Suspense, useEffect, useMemo, useRef } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Environment, OrbitControls, useGLTF } from "@react-three/drei";
 import { useCamera } from "./useCamera.js";
 import { usePoseDetection } from "./usePoseDetection.js";
 import { getModelPosition } from "./arUtils.js";
 
-function ProductModel({ product, pose }) {
-  const gltf = useGLTF(product.modelUrl);
-  const videoSize = useMemo(() => ({ width: 1280, height: 720 }), []);
-  const transform = getModelPosition(pose, product.arCategory, videoSize);
+function ProductModel({ modelUrl, keypoints, arCategory, videoSize }) {
+  const gltf = useGLTF(modelUrl);
+  const transform = getModelPosition(keypoints, arCategory, videoSize);
+
+  if (!Array.isArray(keypoints) || !keypoints.length) return null;
 
   return (
     <primitive
@@ -22,8 +23,9 @@ function ProductModel({ product, pose }) {
 
 export default function ARCanvas({ product, onCaptureReady, preferredDeviceId, onCameraChange }) {
   const { videoRef, ready, error, devices, activeDeviceId } = useCamera({ preferredDeviceId });
-  const { pose, keypoints, loading: poseLoading, error: poseError, backend } = usePoseDetection(videoRef, ready);
+  const { keypoints, loading: poseLoading, error: poseError, backend } = usePoseDetection(videoRef, ready);
   const containerRef = useRef(null);
+  const [videoSize, setVideoSize] = useState({ width: 640, height: 480 });
 
   useEffect(() => {
     if (!onCameraChange) return;
@@ -62,6 +64,26 @@ export default function ARCanvas({ product, onCaptureReady, preferredDeviceId, o
     onCaptureReady(capture);
     return () => onCaptureReady(null);
   }, [onCaptureReady, videoRef]);
+
+  useEffect(() => {
+    if (!ready || !videoRef.current) return undefined;
+
+    const video = videoRef.current;
+    const syncVideoSize = () => {
+      if (video.videoWidth && video.videoHeight) {
+        setVideoSize({ width: video.videoWidth, height: video.videoHeight });
+      }
+    };
+
+    syncVideoSize();
+    video.addEventListener("loadedmetadata", syncVideoSize);
+    video.addEventListener("resize", syncVideoSize);
+
+    return () => {
+      video.removeEventListener("loadedmetadata", syncVideoSize);
+      video.removeEventListener("resize", syncVideoSize);
+    };
+  }, [ready, videoRef]);
 
   return (
     <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
@@ -107,7 +129,7 @@ export default function ARCanvas({ product, onCaptureReady, preferredDeviceId, o
             ? `Pose error: ${poseError.message}`
             : poseLoading
               ? "Loading pose detection..."
-              : `MoveNet ${backend || "ready"} • ${keypoints.length} keypoints`}
+              : `MoveNet ${backend || "ready"} - ${keypoints.length} keypoints`}
         </div>
       )}
       <Canvas
@@ -118,7 +140,12 @@ export default function ARCanvas({ product, onCaptureReady, preferredDeviceId, o
         <ambientLight intensity={1.2} />
         <directionalLight position={[2, 4, 3]} intensity={2} />
         <Suspense fallback={null}>
-          <ProductModel product={product} pose={pose} />
+          <ProductModel
+            modelUrl={product.modelUrl}
+            keypoints={keypoints}
+            arCategory={product.arCategory}
+            videoSize={videoSize}
+          />
           <Environment preset="city" />
         </Suspense>
         <OrbitControls enablePan={false} enableZoom={false} />

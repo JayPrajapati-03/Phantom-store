@@ -5,6 +5,7 @@ import ARCanvas from "../ar/ARCanvas.jsx";
 import { useStyleSuggestion } from "../ai/useStyleSuggestion.js";
 import ProductGrid from "../components/ProductGrid.jsx";
 import { useParams } from "react-router-dom";
+import { useCartStore } from "../store/cartStore.js";
 
 const buttonStyle = {
   border: "0",
@@ -26,6 +27,7 @@ export default function TryOn() {
   const [selectedCameraId, setSelectedCameraId] = useState("");
   const [activeCameraId, setActiveCameraId] = useState("");
   const { suggestions, reason, loading, getSuggestions } = useStyleSuggestion();
+  const addItem = useCartStore((state) => state.addItem);
 
   const handleCaptureReady = useCallback((captureFn) => {
     setCaptureReviewImage(() => captureFn);
@@ -60,6 +62,29 @@ export default function TryOn() {
     if (!product?._id) return;
     getSuggestions(product._id, product.category).catch(() => {});
   }, [getSuggestions, product]);
+
+  const saveLook = () => {
+    if (!captureReviewImage) {
+      toast.error("AR preview is not ready yet");
+      return;
+    }
+
+    try {
+      const imageUrl = captureReviewImage();
+      const link = document.createElement("a");
+      link.download = `${product?.name || "my-look"}.jpg`;
+      link.href = imageUrl;
+      link.click();
+    } catch (error) {
+      toast.error(error.message || "Unable to save look");
+    }
+  };
+
+  const addCurrentProductToCart = () => {
+    if (!product) return;
+    addItem(product);
+    toast.success("Added to cart");
+  };
 
   const getAiReview = async () => {
     if (!product || !captureReviewImage) return;
@@ -128,11 +153,36 @@ export default function TryOn() {
         )}
       </div>
       {product && (
-        <section style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <p style={{ color: "#abb7ce", margin: 0 }}>Capture your look and ask AI for styling feedback.</p>
-          <button style={buttonStyle} onClick={getAiReview} disabled={reviewLoading || !captureReviewImage}>
-            {reviewLoading ? "Reviewing..." : "Get AI review"}
-          </button>
+        <section
+          style={{
+            display: "grid",
+            gap: 14,
+            padding: 16,
+            border: "1px solid #252d3d",
+            borderRadius: 12,
+            background: "#111722"
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ display: "grid", gap: 4 }}>
+              <strong style={{ fontSize: 18 }}>{product.name}</strong>
+              <p style={{ color: "#abb7ce", margin: 0 }}>
+                Save your look, add this item to cart, or ask AI for styling feedback.
+              </p>
+            </div>
+            <p style={{ margin: 0, fontWeight: 700 }}>${Number(product.price).toFixed(2)}</p>
+          </div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button style={buttonStyle} onClick={saveLook} disabled={!captureReviewImage}>
+              Save look
+            </button>
+            <button style={buttonStyle} onClick={addCurrentProductToCart}>
+              Add to cart
+            </button>
+            <button style={buttonStyle} onClick={getAiReview} disabled={reviewLoading || !captureReviewImage}>
+              {reviewLoading ? "Reviewing..." : "Get AI review"}
+            </button>
+          </div>
         </section>
       )}
       {review && (
