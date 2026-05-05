@@ -139,7 +139,7 @@ router.get("/", async (req, res, next) => {
       ];
     }
 
-    const numericLimit = Math.min(Number(limit) || 24, 100);
+    const numericLimit = Math.min(Number(limit) || 24, 1000);
     const skip = (Math.max(Number(page), 1) - 1) * numericLimit;
 
     const [products, count] = await Promise.all([

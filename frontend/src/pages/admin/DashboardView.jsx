@@ -14,7 +14,7 @@ const statBlock = (label, value, accent, icon) => (
   </div>
 );
 
-export default function DashboardView({ products, orders, stores, merchants, totalInventoryValue, pendingOrders, setActiveView }) {
+export default function DashboardView({ products, totalProducts, orders, stores, merchants, totalInventoryValue, pendingOrders, setActiveView }) {
   return (
     <div style={{ display: "grid", gap: 24 }}>
       <section style={{
@@ -31,7 +31,7 @@ export default function DashboardView({ products, orders, stores, merchants, tot
       </section>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 16 }}>
-        {statBlock("Products", products.length, "linear-gradient(135deg, rgba(93,139,255,0.16), rgba(31,39,57,0.92))", "📦")}
+        {statBlock("Products", totalProducts, "linear-gradient(135deg, rgba(93,139,255,0.16), rgba(31,39,57,0.92))", "📦")}
         {statBlock("Merchants", merchants.length, "linear-gradient(135deg, rgba(138,92,255,0.16), rgba(31,39,57,0.92))", "👤")}
         {statBlock("Stores", stores.length, "linear-gradient(135deg, rgba(74,222,128,0.12), rgba(31,39,57,0.92))", "🏪")}
         {statBlock("Orders", orders.length, "linear-gradient(135deg, rgba(250,204,21,0.12), rgba(31,39,57,0.92))", "🛒")}

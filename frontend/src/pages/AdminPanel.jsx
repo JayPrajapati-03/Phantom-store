@@ -23,6 +23,7 @@ export default function AdminPanel() {
   const [orders, setOrders] = useState([]);
   const [stores, setStores] = useState([]);
   const [merchants, setMerchants] = useState([]);
+  const [totalProducts, setTotalProducts] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [creatingMerchant, setCreatingMerchant] = useState(false);
@@ -39,12 +40,13 @@ export default function AdminPanel() {
     try {
       setLoading(true);
       const [productsRes, ordersRes, storesRes, merchantsRes] = await Promise.all([
-        api.get("/products", { params: { limit: 100 } }),
+        api.get("/products", { params: { limit: 1000 } }),
         api.get("/orders"),
-        api.get("/stores", { params: { limit: 20 } }),
+        api.get("/stores", { params: { limit: 100 } }),
         api.get("/auth/merchants")
       ]);
       setProducts(productsRes.data.products || []);
+      setTotalProducts(productsRes.data.pagination?.total || (productsRes.data.products || []).length);
       setOrders(ordersRes.data.orders || []);
       setStores(storesRes.data.stores || []);
       setMerchants(merchantsRes.data.merchants || []);
@@ -127,7 +129,7 @@ export default function AdminPanel() {
 
     switch (activeView) {
       case "dashboard":
-        return <DashboardView products={products} orders={orders} stores={stores} merchants={merchants}
+        return <DashboardView products={products} totalProducts={totalProducts} orders={orders} stores={stores} merchants={merchants}
           totalInventoryValue={totalInventoryValue} pendingOrders={pendingOrders} setActiveView={setActiveView} />;
       case "merchants":
         return <MerchantsView merchants={merchants} merchantForm={merchantForm} setMerchantForm={setMerchantForm}
