@@ -10,9 +10,14 @@ dotenv.config();
 
 const defaultModel = "https://modelviewer.dev/shared-assets/models/Astronaut.glb";
 const categoryModels = {
-  glasses: "https://modelviewer.dev/shared-assets/models/Sunglasses.glb",
-  shoes: "https://modelviewer.dev/shared-assets/models/MaterialsVariantsShoe.glb",
-  hat: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF-Binary/Duck.glb"
+  glasses: "__procedural_glasses__",
+  jacket: "__procedural_jacket__",
+  bag: "__procedural_bag__",
+  watch: "__procedural_watch__",
+  shirt: "__procedural_shirt__",
+  shoes: "__procedural_shoes__",
+  ring: "__procedural_ring__",
+  hat: "__procedural_hat__"
 };
 const buildSeedImageUrl = (imageId) => `https://picsum.photos/id/${imageId}/1200/900`;
 
@@ -258,7 +263,7 @@ const seed = async () => {
       { name: seedProduct.name, storeId: store._id },
       {
         ...seedProduct,
-        modelUrl,
+        modelUrl: seedProduct.modelUrl,
         storeId: store._id
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
