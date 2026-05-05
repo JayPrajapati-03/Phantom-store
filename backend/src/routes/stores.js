@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import Product from "../models/Product.js";
 import Store from "../models/Store.js";
+import User from "../models/User.js";
 import { verifyToken, requireMerchantOrAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -91,14 +92,33 @@ router.get("/:id", async (req, res, next) => {
 
 router.post("/", verifyToken, requireMerchantOrAdmin, async (req, res, next) => {
   try {
-    const { name, description = "" } = req.body;
+    const { name, description = "", ownerId } = req.body;
 
     if (!name?.trim()) {
       return res.status(400).json({ message: "Store name is required" });
     }
 
+    let resolvedOwnerId = req.user._id;
+
+    if (req.user.role === "admin" && ownerId) {
+      if (isInvalidId(ownerId)) {
+        return res.status(400).json({ message: "Invalid owner id" });
+      }
+
+      const owner = await User.findById(ownerId).select("role");
+      if (!owner) {
+        return res.status(404).json({ message: "Store owner not found" });
+      }
+
+      if (!["merchant", "admin"].includes(owner.role)) {
+        return res.status(400).json({ message: "Store owner must be a merchant or admin" });
+      }
+
+      resolvedOwnerId = owner._id;
+    }
+
     const store = await Store.create({
-      ownerId: req.user._id,
+      ownerId: resolvedOwnerId,
       name,
       description
     });
@@ -130,6 +150,23 @@ router.put("/:id", verifyToken, requireMerchantOrAdmin, async (req, res, next) =
       if (req.body[field] !== undefined) {
         store[field] = req.body[field];
       }
+    }
+
+    if (req.user.role === "admin" && req.body.ownerId !== undefined) {
+      if (isInvalidId(req.body.ownerId)) {
+        return res.status(400).json({ message: "Invalid owner id" });
+      }
+
+      const owner = await User.findById(req.body.ownerId).select("role");
+      if (!owner) {
+        return res.status(404).json({ message: "Store owner not found" });
+      }
+
+      if (!["merchant", "admin"].includes(owner.role)) {
+        return res.status(400).json({ message: "Store owner must be a merchant or admin" });
+      }
+
+      store.ownerId = owner._id;
     }
 
     await store.save();

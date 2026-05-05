@@ -2,7 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import { verifyToken } from "../middleware/auth.js";
+import { requireAdmin, verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -70,6 +70,49 @@ router.post("/login", async (req, res, next) => {
 
 router.get("/me", verifyToken, async (req, res) => {
   res.json({ user: req.user });
+});
+
+router.get("/merchants", verifyToken, requireAdmin, async (req, res, next) => {
+  try {
+    const merchants = await User.find({ role: "merchant" })
+      .select("name email role createdAt")
+      .sort({ createdAt: -1 });
+
+    return res.json({ merchants });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post("/admin/merchants", verifyToken, requireAdmin, async (req, res, next) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email, and password are required" });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters" });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ message: "Email is already registered" });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const merchant = await User.create({
+      name,
+      email,
+      password: passwordHash,
+      role: "merchant"
+    });
+
+    return res.status(201).json({ user: merchant.toJSON() });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 export default router;

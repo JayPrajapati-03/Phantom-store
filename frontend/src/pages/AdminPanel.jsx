@@ -72,6 +72,16 @@ const statusColors = {
 const categoryOptions = ["glasses", "jackets", "bags", "watches", "shirts", "shoes", "rings", "hats"];
 const arCategoryOptions = ["glasses", "jacket", "bag", "watch", "shirt", "shoes", "ring", "hat"];
 const productsPerPage = 12;
+const emptyMerchantForm = {
+  name: "",
+  email: "",
+  password: ""
+};
+const emptyStoreForm = {
+  name: "",
+  description: "",
+  ownerId: ""
+};
 
 const emptyForm = {
   name: "",
@@ -105,13 +115,18 @@ export default function AdminPanel() {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [stores, setStores] = useState([]);
+  const [merchants, setMerchants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [creatingMerchant, setCreatingMerchant] = useState(false);
+  const [creatingStore, setCreatingStore] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const [productQuery, setProductQuery] = useState("");
   const [productPage, setProductPage] = useState(1);
   const [activeView, setActiveView] = useState("products");
+  const [merchantForm, setMerchantForm] = useState(emptyMerchantForm);
+  const [storeForm, setStoreForm] = useState(emptyStoreForm);
   const [form, setForm] = useState(emptyForm);
   const [imageFiles, setImageFiles] = useState([]);
   const [modelFile, setModelFile] = useState(null);
@@ -123,20 +138,27 @@ export default function AdminPanel() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [productsRes, ordersRes, storesRes] = await Promise.all([
+      const [productsRes, ordersRes, storesRes, merchantsRes] = await Promise.all([
         api.get("/products", { params: { limit: 100 } }),
         api.get("/orders"),
-        api.get("/stores", { params: { limit: 20 } })
+        api.get("/stores", { params: { limit: 20 } }),
+        api.get("/auth/merchants")
       ]);
 
       const nextProducts = productsRes.data.products || [];
       const nextOrders = ordersRes.data.orders || [];
       const nextStores = storesRes.data.stores || [];
+      const nextMerchants = merchantsRes.data.merchants || [];
 
       setProducts(nextProducts);
       setOrders(nextOrders);
       setStores(nextStores);
+      setMerchants(nextMerchants);
       setSelectedStoreId((current) => current || nextStores[0]?._id || "");
+      setStoreForm((current) => ({
+        ...current,
+        ownerId: current.ownerId || nextMerchants[0]?._id || ""
+      }));
     } catch (error) {
       toast.error(error.response?.data?.message || "Unable to load admin data");
     } finally {
@@ -158,6 +180,64 @@ export default function AdminPanel() {
     setImageFiles([]);
     setModelFile(null);
     setFormError("");
+  };
+
+  const createMerchant = async (event) => {
+    event.preventDefault();
+
+    if (!merchantForm.name.trim() || !merchantForm.email.trim() || !merchantForm.password.trim()) {
+      toast.error("Merchant name, email, and password are required");
+      return;
+    }
+
+    try {
+      setCreatingMerchant(true);
+      const res = await api.post("/auth/admin/merchants", merchantForm);
+      const newMerchant = res.data.user;
+      setMerchants((current) => [newMerchant, ...current]);
+      setStoreForm((current) => ({
+        ...current,
+        ownerId: current.ownerId || newMerchant?._id || ""
+      }));
+      setMerchantForm(emptyMerchantForm);
+      toast.success("Merchant created");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to create merchant");
+    } finally {
+      setCreatingMerchant(false);
+    }
+  };
+
+  const createStore = async (event) => {
+    event.preventDefault();
+
+    if (!String(storeForm.name || "").trim()) {
+      toast.error("Store name is required");
+      return;
+    }
+
+    if (!String(storeForm.ownerId || "").trim()) {
+      toast.error("Select a merchant owner first");
+      return;
+    }
+
+    try {
+      setCreatingStore(true);
+      const res = await api.post("/stores", storeForm);
+      const newStore = res.data.store;
+      setStores((current) => [newStore, ...current]);
+      setSelectedStoreId(newStore?._id || "");
+      setStoreForm((current) => ({
+        ...emptyStoreForm,
+        ownerId: current.ownerId
+      }));
+      toast.success("Store created");
+      loadData().catch(() => {});
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to create store");
+    } finally {
+      setCreatingStore(false);
+    }
   };
 
   const validateForm = () => {
@@ -377,6 +457,118 @@ export default function AdminPanel() {
             <strong style={{ fontSize: 30 }}>{`$${totalInventoryValue.toFixed(0)}`}</strong>
           </div>
         </div>
+      </section>
+
+      <section style={{ display: "grid", gridTemplateColumns: "minmax(320px, 0.95fr) minmax(320px, 1.05fr)", gap: 24 }}>
+        <form onSubmit={createMerchant} style={{ ...panelStyle, padding: 24, display: "grid", gap: 18 }}>
+          <div style={{ display: "grid", gap: 8 }}>
+            <p style={{ margin: 0, color: "#8ea7db", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>
+              Merchant access
+            </p>
+            <h2 style={{ margin: 0 }}>Create a merchant account</h2>
+            <p style={{ margin: 0, color: "#b8c4de" }}>
+              Add a new merchant so you can assign them a store and hand off catalog management.
+            </p>
+          </div>
+
+          <div style={{ display: "grid", gap: 14 }}>
+            <label style={labelStyle}>
+              Merchant name
+              <input
+                style={inputStyle}
+                placeholder="Maya Merchant"
+                value={merchantForm.name}
+                onChange={(event) => setMerchantForm({ ...merchantForm, name: event.target.value })}
+              />
+            </label>
+            <label style={labelStyle}>
+              Email
+              <input
+                style={inputStyle}
+                type="email"
+                placeholder="merchant@example.com"
+                value={merchantForm.email}
+                onChange={(event) => setMerchantForm({ ...merchantForm, email: event.target.value })}
+              />
+            </label>
+            <label style={labelStyle}>
+              Temporary password
+              <input
+                style={inputStyle}
+                type="password"
+                placeholder="At least 8 characters"
+                value={merchantForm.password}
+                onChange={(event) => setMerchantForm({ ...merchantForm, password: event.target.value })}
+              />
+            </label>
+          </div>
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+            <button style={buttonStyle} disabled={creatingMerchant}>
+              {creatingMerchant ? "Creating..." : "Create merchant"}
+            </button>
+            <span style={{ color: "#8ea0c2", fontSize: 13 }}>
+              Merchants available: {merchants.length}
+            </span>
+          </div>
+        </form>
+
+        <form onSubmit={createStore} style={{ ...panelStyle, padding: 24, display: "grid", gap: 18 }}>
+          <div style={{ display: "grid", gap: 8 }}>
+            <p style={{ margin: 0, color: "#8ea7db", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>
+              Store setup
+            </p>
+            <h2 style={{ margin: 0 }}>Create and assign a store</h2>
+            <p style={{ margin: 0, color: "#b8c4de" }}>
+              Pick a merchant owner, create the storefront, then manage products for that store below.
+            </p>
+          </div>
+
+          <div style={{ display: "grid", gap: 14 }}>
+            <label style={labelStyle}>
+              Store name
+              <input
+                style={inputStyle}
+                placeholder="Phantom Signature Store"
+                value={storeForm.name}
+                onChange={(event) => setStoreForm({ ...storeForm, name: event.target.value })}
+              />
+            </label>
+            <label style={labelStyle}>
+              Assigned merchant
+              <select
+                style={inputStyle}
+                value={storeForm.ownerId}
+                onChange={(event) => setStoreForm({ ...storeForm, ownerId: event.target.value })}
+              >
+                <option value="">Select merchant</option>
+                {merchants.map((merchant) => (
+                  <option key={merchant._id} value={merchant._id}>
+                    {merchant.name} · {merchant.email}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={labelStyle}>
+              Description
+              <textarea
+                style={{ ...inputStyle, minHeight: 108, resize: "vertical" }}
+                placeholder="Describe what this store offers."
+                value={storeForm.description}
+                onChange={(event) => setStoreForm({ ...storeForm, description: event.target.value })}
+              />
+            </label>
+          </div>
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+            <button style={buttonStyle} disabled={creatingStore || !merchants.length}>
+              {creatingStore ? "Creating..." : "Create store"}
+            </button>
+            <span style={{ color: "#8ea0c2", fontSize: 13 }}>
+              {merchants.length ? "Assign stores to merchants from this panel." : "Create a merchant first."}
+            </span>
+          </div>
+        </form>
       </section>
 
       {activeView === "products" && (
