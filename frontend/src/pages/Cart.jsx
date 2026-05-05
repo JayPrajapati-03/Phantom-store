@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useCartStore } from "../store/cartStore.js";
 import { useAuthStore } from "../store/authStore.js";
 import { getProductImageSrc, handleImageError } from "../utils/productImages.js";
@@ -11,6 +11,10 @@ export default function Cart() {
   const removeItem = useCartStore((state) => state.removeItem);
   const updateQty = useCartStore((state) => state.updateQty);
   const total = useCartStore((state) => state.total);
+
+  if (!user || user.role !== "customer") {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <section style={{ display: "grid", gap: "var(--space-xl)", animation: "fadeInUp 0.4s var(--ease-out)" }}>

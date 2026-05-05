@@ -5,10 +5,12 @@ import ARCanvas from "../ar/ARCanvas.jsx";
 import { useStyleSuggestion } from "../ai/useStyleSuggestion.js";
 import ProductGrid from "../components/ProductGrid.jsx";
 import { useParams } from "react-router-dom";
+import { useAuthStore } from "../store/authStore.js";
 import { useCartStore } from "../store/cartStore.js";
 
 export default function TryOn() {
   const { id } = useParams();
+  const user = useAuthStore((state) => state.user);
   const [product, setProduct] = useState(null);
   const [captureReviewImage, setCaptureReviewImage] = useState(null);
   const [review, setReview] = useState(null);
@@ -197,7 +199,9 @@ export default function TryOn() {
             <div style={{ display: "grid", gap: 4 }}>
               <strong style={{ fontSize: "1.1rem" }}>{product.name}</strong>
               <p style={{ color: "var(--text-muted)", margin: 0, fontSize: "0.875rem" }}>
-                Save your look, add to cart, or ask AI for styling feedback.
+                {user?.role === "customer"
+                  ? "Save your look, add to cart, or ask AI for styling feedback."
+                  : "Save your look or ask AI for styling feedback."}
               </p>
             </div>
             <p style={{
@@ -211,9 +215,11 @@ export default function TryOn() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
               Save look
             </button>
-            <button className="btn btn-primary" onClick={addCurrentProductToCart}>
-              Add to cart
-            </button>
+            {user?.role === "customer" && (
+              <button className="btn btn-primary" onClick={addCurrentProductToCart}>
+                Add to cart
+              </button>
+            )}
             <button className="btn btn-secondary" onClick={getAiReview} disabled={reviewLoading || !captureReviewImage}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a5 5 0 0 1 5 5v3a5 5 0 0 1-10 0V7a5 5 0 0 1 5-5Z" /><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /></svg>
               {reviewLoading ? "Reviewing..." : "Get AI review"}

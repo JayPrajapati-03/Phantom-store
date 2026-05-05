@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import api from "../utils/api.js";
 import { useCartStore } from "../store/cartStore.js";
 import { useAuthStore } from "../store/authStore.js";
@@ -7,7 +7,11 @@ import { useAuthStore } from "../store/authStore.js";
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, total, clearCart } = useCartStore();
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
+
+  if (!user || user.role !== "customer") {
+    return <Navigate to="/login" replace />;
+  }
 
   const checkout = async () => {
     if (!token) { navigate("/login"); return; }

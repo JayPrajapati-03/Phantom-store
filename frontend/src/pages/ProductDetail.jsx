@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../utils/api.js";
+import { useAuthStore } from "../store/authStore.js";
 import { useCartStore } from "../store/cartStore.js";
 import { useStyleSuggestion } from "../ai/useStyleSuggestion.js";
 import ProductGrid from "../components/ProductGrid.jsx";
@@ -9,6 +10,7 @@ import { getProductImageSrc, getCategoryLabel, handleImageError } from "../utils
 
 export default function ProductDetail() {
   const { id } = useParams();
+  const user = useAuthStore((state) => state.user);
   const addItem = useCartStore((state) => state.addItem);
   const [product, setProduct] = useState(null);
   const [imageIndex, setImageIndex] = useState(0);
@@ -138,13 +140,15 @@ export default function ProductDetail() {
               </svg>
               Try On in AR
             </Link>
-            <button
-              className="btn btn-secondary"
-              style={{ justifyContent: "center" }}
-              onClick={() => { addItem(product); toast.success("Added to cart"); }}
-            >
-              Add to Cart
-            </button>
+            {user?.role === "customer" && (
+              <button
+                className="btn btn-secondary"
+                style={{ justifyContent: "center" }}
+                onClick={() => { addItem(product); toast.success("Added to cart"); }}
+              >
+                Add to Cart
+              </button>
+            )}
           </div>
         </section>
       </div>

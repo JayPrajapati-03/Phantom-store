@@ -1,10 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useAuthStore } from "../store/authStore.js";
 import { useCartStore } from "../store/cartStore.js";
 import { getProductImageSrc, getCategoryLabel, handleImageError } from "../utils/productImages.js";
 
 export default function ProductCard({ product }) {
+  const user = useAuthStore((state) => state.user);
   const addItem = useCartStore((state) => state.addItem);
 
   return (
@@ -27,17 +29,19 @@ export default function ProductCard({ product }) {
           >
             ✦ Try On
           </Link>
-          <button
-            className="btn btn-secondary"
-            style={{ fontSize: "0.8rem", padding: "8px 14px" }}
-            onClick={(e) => {
-              e.stopPropagation();
-              addItem(product);
-              toast.success(`${product.name} added to cart`);
-            }}
-          >
-            + Cart
-          </button>
+          {user?.role === "customer" && (
+            <button
+              className="btn btn-secondary"
+              style={{ fontSize: "0.8rem", padding: "8px 14px" }}
+              onClick={(e) => {
+                e.stopPropagation();
+                addItem(product);
+                toast.success(`${product.name} added to cart`);
+              }}
+            >
+              + Cart
+            </button>
+          )}
         </div>
       </div>
       <Link to={`/products/${product._id}`} style={{ textDecoration: "none" }}>
