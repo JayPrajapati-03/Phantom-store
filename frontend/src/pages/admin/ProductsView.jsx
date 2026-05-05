@@ -99,8 +99,7 @@ export default function ProductsView({
     <div style={{ display: "grid", gap: 24 }}>
       {/* Header */}
       <section style={{
-        ...panelStyle, padding: 28,
-        background: "radial-gradient(circle at top right, rgba(93,139,255,0.18), transparent 32%), linear-gradient(180deg, rgba(16,21,31,0.96), rgba(11,14,22,0.98))"
+        ...panelStyle, padding: 28
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap", alignItems: "end" }}>
           <div style={{ display: "grid", gap: 10 }}>
@@ -123,14 +122,14 @@ export default function ProductsView({
         <form onSubmit={submit} style={{ ...panelStyle, padding: 24, display: "grid", gap: 20 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "start" }}>
             <div style={{ display: "grid", gap: 8 }}>
-              <p style={{ margin: 0, color: "#8ea7db", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>Product form</p>
+              <p style={{ margin: 0, color: "var(--accent-light)", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>Product form</p>
               <h2 style={{ margin: 0 }}>{editingId ? "Edit product" : "Create a new product"}</h2>
             </div>
             {editingId && <button type="button" style={secondaryStyle} onClick={resetForm}>Cancel edit</button>}
           </div>
 
           {!!formError && (
-            <div style={{ border: "1px solid rgba(248,113,113,0.35)", borderRadius: 14, background: "rgba(69,24,38,0.45)", color: "#fecdd3", padding: "12px 14px" }}>
+            <div style={{ border: "1px solid rgba(248,113,113,0.35)", borderRadius: 14, background: "rgba(248,113,113,0.08)", color: "var(--error)", padding: "12px 14px" }}>
               {formError}
             </div>
           )}
@@ -169,14 +168,14 @@ export default function ProductsView({
               <label style={labelStyle}>Product images
                 <input style={inputStyle} type="file" multiple accept="image/*" onChange={(e) => setImageFiles(e.target.files || [])} />
               </label>
-              <p style={{ margin: 0, color: "#8ea0c2", fontSize: 13 }}>{selectedImageNames || "Upload storefront images."}</p>
+              <p style={{ margin: 0, color: "var(--text-muted)", fontSize: 13 }}>{selectedImageNames || "Upload storefront images."}</p>
             </div>
             <div style={{ ...cardStyle, padding: 16, display: "grid", gap: 10 }}>
               <label style={labelStyle}>3D model
                 <input style={inputStyle} type="file" accept=".glb,.gltf,model/gltf-binary" onChange={(e) => setModelFile(e.target.files?.[0] || null)} />
               </label>
-              <p style={{ margin: 0, color: "#8ea0c2", fontSize: 13 }}>{modelFile?.name || "Attach a GLB or GLTF model."}</p>
-              {!editingId && <p style={{ margin: 0, color: "#fda4af", fontSize: 12 }}>Required for new products.</p>}
+              <p style={{ margin: 0, color: "var(--text-muted)", fontSize: 13 }}>{modelFile?.name || "Attach a GLB or GLTF model."}</p>
+              {!editingId && <p style={{ margin: 0, color: "var(--error)", fontSize: 12 }}>Required for new products.</p>}
             </div>
           </div>
 
@@ -189,7 +188,7 @@ export default function ProductsView({
         {/* Live Preview */}
         <section style={{ ...panelStyle, padding: 24, display: "grid", gap: 18, alignContent: "start" }}>
           <div style={{ display: "grid", gap: 8 }}>
-            <p style={{ margin: 0, color: "#8ea7db", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>Live preview</p>
+            <p style={{ margin: 0, color: "var(--accent-light)", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>Live preview</p>
             <h2 style={{ margin: 0 }}>{activeStore?.name || "No active store"}</h2>
           </div>
           <div style={{ ...cardStyle, overflow: "hidden" }}>
@@ -198,11 +197,11 @@ export default function ProductsView({
                 style={{ width: "100%", height: "100%", objectFit: "cover", background: "#0c1119" }} onError={handleImageError} />
               <div style={{ padding: 18, display: "grid", gap: 10 }}>
                 <strong style={{ fontSize: 20 }}>{form.name || "Product preview"}</strong>
-                <p style={{ margin: 0, color: "#aab6d0", lineHeight: 1.5 }}>{form.description || "Your product summary will show here."}</p>
+                <p style={{ margin: 0, color: "var(--text-secondary)", lineHeight: 1.5 }}>{form.description || "Your product summary will show here."}</p>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ padding: "7px 10px", borderRadius: 999, background: "rgba(93,139,255,0.14)", color: "#a9c3ff", fontSize: 12 }}>{formatStatus(form.category || "category")}</span>
-                  <span style={{ padding: "7px 10px", borderRadius: 999, background: "rgba(138,92,255,0.14)", color: "#c4b5fd", fontSize: 12 }}>AR: {formatStatus(form.arCategory || "glasses")}</span>
-                  <span style={{ padding: "7px 10px", borderRadius: 999, background: "rgba(74,222,128,0.12)", color: "#86efac", fontSize: 12 }}>Stock {form.stock || "0"}</span>
+                  <span style={{ padding: "7px 10px", borderRadius: 999, background: "var(--accent-subtle)", color: "var(--accent-light)", fontSize: 12 }}>{formatStatus(form.category || "category")}</span>
+                  <span style={{ padding: "7px 10px", borderRadius: 999, background: "var(--accent-subtle)", color: "var(--text-accent)", fontSize: 12 }}>AR: {formatStatus(form.arCategory || "glasses")}</span>
+                  <span style={{ padding: "7px 10px", borderRadius: 999, background: "rgba(52,211,153,0.12)", color: "var(--success)", fontSize: 12 }}>Stock {form.stock || "0"}</span>
                 </div>
               </div>
             </div>
@@ -214,7 +213,7 @@ export default function ProductsView({
       <section style={{ ...panelStyle, padding: 24, display: "grid", gap: 18 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", gap: 16, flexWrap: "wrap" }}>
           <div style={{ display: "grid", gap: 8 }}>
-            <p style={{ margin: 0, color: "#8ea7db", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>Product library</p>
+            <p style={{ margin: 0, color: "var(--accent-light)", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>Product library</p>
             <h2 style={{ margin: 0 }}>Browse and edit your catalog</h2>
           </div>
           <label style={{ ...labelStyle, minWidth: 280 }}>Search products
@@ -226,17 +225,17 @@ export default function ProductsView({
           {paginatedProducts.map((product) => (
             <article key={product._id} style={{ ...cardStyle, overflow: "hidden", display: "grid" }}>
               <img src={getProductImageSrc(product)} alt={product.name}
-                style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", background: "#0c1119" }} onError={handleImageError} />
+                style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", background: "var(--bg-surface)" }} onError={handleImageError} />
               <div style={{ padding: 16, display: "grid", gap: 12 }}>
                 <div style={{ display: "grid", gap: 6 }}>
                   <strong style={{ fontSize: 18 }}>{product.name}</strong>
-                  <p style={{ margin: 0, color: "#8ea0c2", lineHeight: 1.5 }}>{product.description?.slice(0, 110) || "No description."}</p>
+                  <p style={{ margin: 0, color: "var(--text-secondary)", lineHeight: 1.5 }}>{product.description?.slice(0, 110) || "No description."}</p>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ padding: "6px 10px", borderRadius: 999, background: "rgba(93,139,255,0.14)", color: "#a9c3ff", fontSize: 12 }}>{product.category}</span>
-                  <span style={{ padding: "6px 10px", borderRadius: 999, background: "rgba(138,92,255,0.14)", color: "#c4b5fd", fontSize: 12 }}>AR {product.arCategory}</span>
+                  <span style={{ padding: "6px 10px", borderRadius: 999, background: "var(--accent-subtle)", color: "var(--accent-light)", fontSize: 12 }}>{product.category}</span>
+                  <span style={{ padding: "6px 10px", borderRadius: 999, background: "var(--accent-subtle)", color: "var(--text-accent)", fontSize: 12 }}>AR {product.arCategory}</span>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, color: "#dce4f9" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, color: "var(--text-primary)" }}>
                   <span>${Number(product.price).toFixed(2)}</span>
                   <span>Stock {product.stock}</span>
                 </div>
@@ -251,12 +250,12 @@ export default function ProductsView({
 
         {filteredProducts.length > productsPerPage && (
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <p style={{ margin: 0, color: "#aab6d0" }}>
+            <p style={{ margin: 0, color: "var(--text-secondary)" }}>
               {(productPage - 1) * productsPerPage + 1}-{Math.min(productPage * productsPerPage, filteredProducts.length)} of {filteredProducts.length}
             </p>
             <div style={{ display: "flex", gap: 10 }}>
               <button type="button" style={secondaryStyle} disabled={productPage === 1} onClick={() => setProductPage((c) => c - 1)}>Previous</button>
-              <span style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(38,48,68,0.88)", color: "#dce4f9", minWidth: 92, textAlign: "center", fontWeight: 700 }}>
+              <span style={{ padding: "12px 14px", borderRadius: 14, background: "var(--bg-elevated)", color: "var(--text-primary)", minWidth: 92, textAlign: "center", fontWeight: 700 }}>
                 {productPage} / {totalPages}
               </span>
               <button type="button" style={secondaryStyle} disabled={productPage === totalPages} onClick={() => setProductPage((c) => c + 1)}>Next</button>

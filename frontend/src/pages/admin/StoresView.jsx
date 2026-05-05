@@ -4,14 +4,11 @@ import { panelStyle, inputStyle, labelStyle, buttonStyle } from "./adminStyles.j
 export default function StoresView({ stores, merchants, storeForm, setStoreForm, createStore, creatingStore, selectedStoreId, setSelectedStoreId }) {
   return (
     <div style={{ display: "grid", gap: 24 }}>
-      <section style={{
-        ...panelStyle, padding: 28,
-        background: "radial-gradient(circle at top right, rgba(74,222,128,0.15), transparent 32%), linear-gradient(180deg, rgba(16,21,31,0.96), rgba(11,14,22,0.98))"
-      }}>
+      <section style={{ ...panelStyle, padding: 28 }}>
         <div style={{ display: "grid", gap: 10, marginBottom: 8 }}>
-          <p style={{ margin: 0, textTransform: "uppercase", letterSpacing: "0.18em", color: "#86efac", fontSize: 12 }}>Store management</p>
+          <p style={{ margin: 0, textTransform: "uppercase", letterSpacing: "0.18em", color: "var(--success)", fontSize: 12, fontWeight: 700 }}>Store management</p>
           <h1 style={{ margin: 0, fontSize: "clamp(1.6rem, 3vw, 2.4rem)", lineHeight: 1.1 }}>Create & manage stores</h1>
-          <p style={{ margin: 0, color: "#b8c4de", maxWidth: 620 }}>
+          <p style={{ margin: 0, color: "var(--text-secondary)", maxWidth: 620 }}>
             Create storefronts and assign them to merchants for catalog management.
           </p>
         </div>
@@ -21,9 +18,9 @@ export default function StoresView({ stores, merchants, storeForm, setStoreForm,
         {/* Create Store Form */}
         <form onSubmit={createStore} style={{ ...panelStyle, padding: 24, display: "grid", gap: 18, alignContent: "start" }}>
           <div style={{ display: "grid", gap: 8 }}>
-            <p style={{ margin: 0, color: "#86efac", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>New store</p>
+            <p style={{ margin: 0, color: "var(--success)", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12, fontWeight: 700 }}>New store</p>
             <h2 style={{ margin: 0 }}>Create and assign a store</h2>
-            <p style={{ margin: 0, color: "#b8c4de" }}>
+            <p style={{ margin: 0, color: "var(--text-secondary)" }}>
               Pick a merchant owner and create a storefront.
             </p>
           </div>
@@ -56,7 +53,7 @@ export default function StoresView({ stores, merchants, storeForm, setStoreForm,
             <button style={buttonStyle} disabled={creatingStore || !merchants.length}>
               {creatingStore ? "Creating..." : "Create store"}
             </button>
-            <span style={{ color: "#8ea0c2", fontSize: 13 }}>
+            <span style={{ color: "var(--text-muted)", fontSize: 13 }}>
               {merchants.length ? "Assign stores to merchants." : "Create a merchant first."}
             </span>
           </div>
@@ -65,18 +62,18 @@ export default function StoresView({ stores, merchants, storeForm, setStoreForm,
         {/* Store List */}
         <section style={{ ...panelStyle, padding: 24, display: "grid", gap: 16, alignContent: "start" }}>
           <div style={{ display: "grid", gap: 8 }}>
-            <p style={{ margin: 0, color: "#86efac", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>Active stores</p>
+            <p style={{ margin: 0, color: "var(--success)", textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12, fontWeight: 700 }}>Active stores</p>
             <h2 style={{ margin: 0 }}>All stores ({stores.length})</h2>
           </div>
 
           {stores.length === 0 ? (
-            <p style={{ margin: 0, color: "#8ea0c2" }}>No stores yet. Create one to get started.</p>
+            <p style={{ margin: 0, color: "var(--text-muted)" }}>No stores yet. Create one to get started.</p>
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
               {stores.map((s) => (
                 <div key={s._id} style={{
-                  border: selectedStoreId === s._id ? "1px solid rgba(74,222,128,0.4)" : "1px solid rgba(92,111,150,0.2)",
-                  borderRadius: 16, background: "rgba(18,23,34,0.92)", padding: 16,
+                  border: selectedStoreId === s._id ? "1px solid var(--accent)" : "1px solid var(--border-light)",
+                  borderRadius: 16, background: "var(--bg-elevated)", padding: 16,
                   display: "grid", gap: 6, cursor: "pointer", transition: "all 0.2s ease"
                 }}
                 onClick={() => setSelectedStoreId(s._id)}>
@@ -85,12 +82,12 @@ export default function StoresView({ stores, merchants, storeForm, setStoreForm,
                     {selectedStoreId === s._id && (
                       <span style={{
                         padding: "5px 10px", borderRadius: 999,
-                        background: "rgba(74,222,128,0.14)", color: "#86efac", fontSize: 11, fontWeight: 700
+                        background: "rgba(52, 211, 153, 0.12)", color: "var(--success)", fontSize: 11, fontWeight: 700
                       }}>Active</span>
                     )}
                   </div>
-                  <span style={{ color: "#8ea0c2", fontSize: 13 }}>{s.description || "No description"}</span>
-                  <span style={{ color: "#657ba8", fontSize: 12 }}>
+                  <span style={{ color: "var(--text-muted)", fontSize: 13 }}>{s.description || "No description"}</span>
+                  <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
                     Owner: {merchants.find((m) => m._id === (s.owner?._id || s.owner))?.name || s.owner?._id || "—"}
                   </span>
                 </div>

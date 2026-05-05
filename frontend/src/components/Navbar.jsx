@@ -2,6 +2,65 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/authStore.js";
 import { useCartStore } from "../store/cartStore.js";
+import { useThemeStore } from "../store/themeStore.js";
+
+function ThemeToggle() {
+  const { theme, toggleTheme } = useThemeStore();
+  const isDark = theme === "dark";
+
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Light mode" : "Dark mode"}
+      style={{
+        width: 38,
+        height: 38,
+        borderRadius: "50%",
+        border: "1px solid var(--border-light)",
+        background: "var(--bg-elevated)",
+        color: "var(--text-secondary)",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: "all 0.3s var(--ease-out)",
+        flexShrink: 0,
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--bg-hover)";
+        e.currentTarget.style.borderColor = "var(--border-focus)";
+        e.currentTarget.style.color = "var(--text-primary)";
+        e.currentTarget.style.transform = "rotate(15deg) scale(1.08)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "var(--bg-elevated)";
+        e.currentTarget.style.borderColor = "var(--border-light)";
+        e.currentTarget.style.color = "var(--text-secondary)";
+        e.currentTarget.style.transform = "none";
+      }}
+    >
+      {isDark ? (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="5" />
+          <line x1="12" y1="1" x2="12" y2="3" />
+          <line x1="12" y1="21" x2="12" y2="23" />
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+          <line x1="1" y1="12" x2="3" y2="12" />
+          <line x1="21" y1="12" x2="23" y2="12" />
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+        </svg>
+      ) : (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+      )}
+    </button>
+  );
+}
 
 export default function Navbar() {
   const { user, isAdmin, isMerchant } = useAuthStore();
@@ -46,6 +105,8 @@ export default function Navbar() {
 
   const panelLink = getPanelLink();
   const panelLabel = getPanelLabel();
+  const { theme } = useThemeStore();
+  const isLight = theme === "light";
 
   return (
     <header
@@ -55,7 +116,9 @@ export default function Navbar() {
         zIndex: 100,
         padding: "0 var(--space-lg)",
         transition: "all 0.3s var(--ease-out)",
-        background: scrolled ? "rgba(8, 10, 15, 0.85)" : "rgba(8, 10, 15, 0.5)",
+        background: scrolled
+          ? (isLight ? "rgba(245, 246, 250, 0.9)" : "rgba(8, 10, 15, 0.85)")
+          : (isLight ? "rgba(245, 246, 250, 0.6)" : "rgba(8, 10, 15, 0.5)"),
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
         borderBottom: scrolled ? "1px solid var(--border-light)" : "1px solid transparent"
@@ -128,6 +191,9 @@ export default function Navbar() {
               {panelLabel}
             </Link>
           )}
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {user ? (
             <Link

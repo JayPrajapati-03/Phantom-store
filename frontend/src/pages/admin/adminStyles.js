@@ -1,31 +1,32 @@
 export const panelStyle = {
-  border: "1px solid rgba(101, 123, 168, 0.22)",
+  border: "1px solid var(--border-light)",
   borderRadius: 24,
-  background: "linear-gradient(180deg, rgba(16, 21, 31, 0.96), rgba(11, 14, 22, 0.98))",
-  boxShadow: "0 24px 60px rgba(0, 0, 0, 0.28)"
+  background: "var(--bg-surface)",
+  boxShadow: "var(--shadow-lg)"
 };
 
 export const cardStyle = {
-  border: "1px solid rgba(92, 111, 150, 0.2)",
+  border: "1px solid var(--border-light)",
   borderRadius: 20,
-  background: "rgba(18, 23, 34, 0.92)"
+  background: "var(--bg-elevated)"
 };
 
 export const inputStyle = {
   width: "100%",
-  border: "1px solid #2a3346",
+  border: "1px solid var(--border-light)",
   borderRadius: 14,
-  background: "#111722",
-  color: "#fff",
+  background: "var(--bg-surface)",
+  color: "var(--text-primary)",
   padding: "13px 14px",
   outline: "none",
-  boxSizing: "border-box"
+  boxSizing: "border-box",
+  transition: "border-color 0.2s ease"
 };
 
 export const labelStyle = {
   display: "grid",
   gap: 8,
-  color: "#dbe5ff",
+  color: "var(--text-secondary)",
   fontSize: 13,
   fontWeight: 700,
   letterSpacing: "0.02em"
@@ -34,24 +35,26 @@ export const labelStyle = {
 export const buttonStyle = {
   border: "0",
   borderRadius: 14,
-  background: "linear-gradient(135deg, #8a5cff, #5d8bff)",
+  background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
   color: "#fff",
   padding: "12px 18px",
   cursor: "pointer",
   fontWeight: 800,
-  boxShadow: "0 12px 30px rgba(93, 139, 255, 0.2)"
+  boxShadow: "var(--shadow-glow)"
 };
 
 export const secondaryStyle = {
   ...buttonStyle,
-  background: "#263044",
-  boxShadow: "none"
+  background: "var(--bg-elevated)",
+  color: "var(--text-primary)",
+  boxShadow: "none",
+  border: "1px solid var(--border-light)"
 };
 
 export const dangerStyle = {
   ...buttonStyle,
-  background: "#2b1d24",
-  color: "#ffb9cb",
+  background: "rgba(248, 113, 113, 0.12)",
+  color: "var(--error)",
   boxShadow: "none"
 };
 

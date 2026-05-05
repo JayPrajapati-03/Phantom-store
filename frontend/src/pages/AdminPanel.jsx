@@ -157,8 +157,8 @@ export default function AdminPanel() {
     }}>
       {/* Sidebar */}
       <aside style={{
-        background: "linear-gradient(180deg, rgba(12, 16, 24, 0.98), rgba(8, 11, 18, 0.99))",
-        borderRight: "1px solid rgba(101, 123, 168, 0.15)",
+        background: "var(--bg-primary)",
+        borderRight: "1px solid var(--border-light)",
         padding: "20px 0",
         display: "flex",
         flexDirection: "column",
@@ -172,7 +172,7 @@ export default function AdminPanel() {
         {/* Logo / toggle */}
         <div style={{
           padding: sidebarCollapsed ? "12px 8px 20px" : "12px 20px 20px",
-          borderBottom: "1px solid rgba(101, 123, 168, 0.12)",
+          borderBottom: "1px solid var(--border-light)",
           marginBottom: 8,
           display: "flex",
           alignItems: "center",
@@ -180,7 +180,7 @@ export default function AdminPanel() {
           gap: 8
         }}>
           {!sidebarCollapsed && (
-            <span style={{ fontSize: 16, fontWeight: 800, color: "#dce4f9", letterSpacing: "0.04em" }}>
+            <span style={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "0.04em" }}>
               ⚡ Admin
             </span>
           )}
@@ -188,10 +188,10 @@ export default function AdminPanel() {
             type="button"
             onClick={() => setSidebarCollapsed((c) => !c)}
             style={{
-              background: "rgba(38, 48, 68, 0.6)",
-              border: "1px solid rgba(101, 123, 168, 0.2)",
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border-light)",
               borderRadius: 10,
-              color: "#8ea7db",
+              color: "var(--text-secondary)",
               padding: "6px 8px",
               cursor: "pointer",
               fontSize: 14,
@@ -218,11 +218,11 @@ export default function AdminPanel() {
                 padding: sidebarCollapsed ? "14px 0" : "14px 20px",
                 justifyContent: sidebarCollapsed ? "center" : "flex-start",
                 background: isActive
-                  ? "linear-gradient(90deg, rgba(93, 139, 255, 0.18), transparent)"
+                  ? "var(--accent-subtle)"
                   : "transparent",
                 border: "none",
-                borderLeft: isActive ? "3px solid #5d8bff" : "3px solid transparent",
-                color: isActive ? "#dce4f9" : "#7b8fb8",
+                borderLeft: isActive ? "3px solid var(--accent)" : "3px solid transparent",
+                color: isActive ? "var(--text-primary)" : "var(--text-muted)",
                 cursor: "pointer",
                 fontSize: 14,
                 fontWeight: isActive ? 700 : 500,
@@ -230,7 +230,7 @@ export default function AdminPanel() {
                 letterSpacing: "0.01em"
               }}
               onMouseEnter={(e) => {
-                if (!isActive) e.currentTarget.style.background = "rgba(38, 48, 68, 0.4)";
+                if (!isActive) e.currentTarget.style.background = "var(--bg-hover)";
               }}
               onMouseLeave={(e) => {
                 if (!isActive) e.currentTarget.style.background = "transparent";
@@ -243,11 +243,11 @@ export default function AdminPanel() {
         })}
 
         {/* Bottom info */}
-        <div style={{ marginTop: "auto", padding: sidebarCollapsed ? "16px 8px" : "16px 20px", borderTop: "1px solid rgba(101, 123, 168, 0.12)" }}>
+        <div style={{ marginTop: "auto", padding: sidebarCollapsed ? "16px 8px" : "16px 20px", borderTop: "1px solid var(--border-light)" }}>
           {!sidebarCollapsed && (
             <div style={{ display: "grid", gap: 4 }}>
-              <span style={{ color: "#657ba8", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em" }}>Stores: {stores.length}</span>
-              <span style={{ color: "#657ba8", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em" }}>Products: {products.length}</span>
+              <span style={{ color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em" }}>Stores: {stores.length}</span>
+              <span style={{ color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em" }}>Products: {products.length}</span>
             </div>
           )}
         </div>
