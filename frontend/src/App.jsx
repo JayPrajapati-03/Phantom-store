@@ -8,6 +8,7 @@ import Cart from "./pages/Cart.jsx";
 import Checkout from "./pages/Checkout.jsx";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
+import Logout from "./pages/Logout.jsx";
 import MerchantPanel from "./pages/MerchantPanel.jsx";
 import OrderConfirmed from "./pages/OrderConfirmed.jsx";
 import ProductDetail from "./pages/ProductDetail.jsx";
@@ -62,6 +63,7 @@ export default function App() {
 
             {/* Single login — auto-routes based on role */}
             <Route path="/login" element={<Login />} />
+            <Route path="/logout" element={<Logout />} />
 
             {/* Admin protected */}
             <Route

@@ -4,7 +4,7 @@ import { useAuthStore } from "../store/authStore.js";
 import { useCartStore } from "../store/cartStore.js";
 
 export default function Navbar() {
-  const { user, logout, isAdmin, isMerchant } = useAuthStore();
+  const { user, isAdmin, isMerchant } = useAuthStore();
   const location = useLocation();
   const cartCount = useCartStore((state) =>
     (Array.isArray(state.items) ? state.items : []).reduce(
@@ -87,6 +87,10 @@ export default function Navbar() {
 
         {/* Nav */}
         <nav style={{ display: "flex", gap: 20, alignItems: "center" }}>
+          <Link to="/" className="nav-link">
+            Home
+          </Link>
+
           {/* Cart — visible for customers or when no user */}
           {(!user || user.role === "customer") && (
             <Link to="/cart" className="nav-link" style={{ position: "relative", display: "flex", alignItems: "center", gap: 6 }}>
@@ -126,13 +130,13 @@ export default function Navbar() {
           )}
 
           {user ? (
-            <button
-              onClick={logout}
+            <Link
+              to="/logout"
               className="btn btn-secondary"
               style={{ padding: "8px 16px", fontSize: "0.875rem" }}
             >
               Logout
-            </button>
+            </Link>
           ) : (
             <Link to="/login" className="btn btn-primary" style={{ padding: "8px 18px", fontSize: "0.875rem" }}>
               Login
