@@ -19,6 +19,8 @@ export default function TryOn() {
   const [selectedCameraId, setSelectedCameraId] = useState("");
   const [activeCameraId, setActiveCameraId] = useState("");
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const [permissionRequesting, setPermissionRequesting] = useState(false);
+  const [permissionError, setPermissionError] = useState("");
   const { suggestions, reason, loading, getSuggestions } = useStyleSuggestion();
   const addItem = useCartStore((state) => state.addItem);
 
@@ -72,6 +74,48 @@ export default function TryOn() {
     if (!product) return;
     addItem(product);
     toast.success("Added to cart");
+  };
+
+  const enableCamera = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      const message = "Camera access is not supported in this browser.";
+      setPermissionError(message);
+      toast.error(message);
+      return;
+    }
+
+    try {
+      setPermissionRequesting(true);
+      setPermissionError("");
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: selectedCameraId
+          ? {
+              deviceId: { exact: selectedCameraId },
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
+          : {
+              facingMode: "user",
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
+      });
+
+      mediaStream.getTracks().forEach((track) => track.stop());
+      setPermissionGranted(true);
+    } catch (error) {
+      const message =
+        error?.name === "NotAllowedError"
+          ? "Camera permission was blocked. Please allow camera access to use AR try-on."
+          : error?.message || "Unable to access the camera.";
+      setPermissionGranted(false);
+      setPermissionError(message);
+      toast.error(message);
+    } finally {
+      setPermissionRequesting(false);
+    }
   };
 
   const getAiReview = async () => {
@@ -143,7 +187,8 @@ export default function TryOn() {
             alignItems: "center",
             justifyContent: "center",
             gap: 20,
-            background: "rgba(11, 13, 18, 0.9)",
+            background: "var(--overlay-strong)",
+            color: "var(--overlay-text)",
             backdropFilter: "blur(8px)",
             padding: 40,
             textAlign: "center"
@@ -165,16 +210,22 @@ export default function TryOn() {
             </div>
             <div>
               <h3 style={{ margin: "0 0 8px" }}>Camera Access Required</h3>
-              <p style={{ color: "var(--text-muted)", maxWidth: 320, margin: 0 }}>
-                To see the AR effect, we need permission to use your camera.
+              <p style={{ color: "rgba(255, 255, 255, 0.76)", maxWidth: 320, margin: 0 }}>
+                Click enable camera and allow browser permission to start the AR preview.
               </p>
+              {permissionError && (
+                <p style={{ color: "var(--error)", maxWidth: 360, margin: "12px 0 0", fontSize: "0.875rem" }}>
+                  {permissionError}
+                </p>
+              )}
             </div>
             <button
               className="btn btn-primary"
-              onClick={() => setPermissionGranted(true)}
+              onClick={enableCamera}
+              disabled={permissionRequesting}
               style={{ padding: "12px 32px" }}
             >
-              Enable Camera
+              {permissionRequesting ? "Waiting for permission..." : "Enable Camera"}
             </button>
           </div>
         )}

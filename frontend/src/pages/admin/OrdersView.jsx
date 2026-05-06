@@ -20,8 +20,8 @@ export default function OrdersView({ orders, updateStatus }) {
               {formatStatus(order.status)}
             </span>
           </div>
-          <p style={{ margin: 0, color: "#dce4f9", fontWeight: 700 }}>${Number(order.total).toFixed(2)}</p>
-          <p style={{ margin: 0, color: "#aab6d0", lineHeight: 1.6 }}>
+          <p style={{ margin: 0, color: "var(--text-primary)", fontWeight: 800 }}>${Number(order.total).toFixed(2)}</p>
+          <p style={{ margin: 0, color: "var(--text-secondary)", lineHeight: 1.6 }}>
             {order.items.map((i) => `${i.name} x${i.quantity}`).join(", ")}
           </p>
         </div>
@@ -42,12 +42,12 @@ export default function OrdersView({ orders, updateStatus }) {
     <div style={{ display: "grid", gap: 24 }}>
       <section style={{
         ...panelStyle, padding: 28,
-        background: "radial-gradient(circle at top right, rgba(250,204,21,0.15), transparent 32%), linear-gradient(180deg, rgba(16,21,31,0.96), rgba(11,14,22,0.98))"
+        background: "var(--admin-hero-bg)"
       }}>
         <div style={{ display: "grid", gap: 10, marginBottom: 8 }}>
-          <p style={{ margin: 0, textTransform: "uppercase", letterSpacing: "0.18em", color: "#facc15", fontSize: 12 }}>Order management</p>
+          <p style={{ margin: 0, textTransform: "uppercase", letterSpacing: "0.18em", color: "var(--status-pending-text)", fontSize: 12, fontWeight: 800 }}>Order management</p>
           <h1 style={{ margin: 0, fontSize: "clamp(1.6rem, 3vw, 2.4rem)", lineHeight: 1.1 }}>Keep fulfillment moving</h1>
-          <p style={{ margin: 0, color: "#b8c4de", maxWidth: 620 }}>
+          <p style={{ margin: 0, color: "var(--text-secondary)", maxWidth: 620, fontWeight: 600 }}>
             Track, update, and manage all customer orders from this page.
           </p>
         </div>
@@ -56,18 +56,20 @@ export default function OrdersView({ orders, updateStatus }) {
       {/* Stats row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
         {[
-          { label: "Total", count: orders.length, color: "#9bb5ec", bg: "rgba(93,139,255,0.16)" },
-          { label: "Active", count: pendingOrders.length, color: "#facc15", bg: "rgba(250,204,21,0.12)" },
-          { label: "Completed", count: completedOrders.length, color: "#86efac", bg: "rgba(74,222,128,0.12)" },
-          { label: "Cancelled/Refunded", count: otherOrders.length, color: "#fca5a5", bg: "rgba(248,113,113,0.12)" },
+          { label: "Total", count: orders.length, color: "var(--text-accent)", bg: "rgba(93,139,255,0.16)" },
+          { label: "Active", count: pendingOrders.length, color: "var(--status-pending-text)", bg: "rgba(250,204,21,0.14)" },
+          { label: "Completed", count: completedOrders.length, color: "var(--status-delivered-text)", bg: "rgba(74,222,128,0.14)" },
+          { label: "Cancelled/Refunded", count: otherOrders.length, color: "var(--status-cancelled-text)", bg: "rgba(248,113,113,0.14)" },
         ].map((s) => (
           <div key={s.label} style={{
             padding: 18, borderRadius: 18,
-            background: `linear-gradient(135deg, ${s.bg}, rgba(31,39,57,0.92))`,
-            border: "1px solid rgba(255,255,255,0.08)", display: "grid", gap: 6
+            "--metric-tint": s.bg,
+            background: "var(--metric-card-bg)",
+            border: "1px solid var(--border-light)", display: "grid", gap: 6,
+            boxShadow: "var(--shadow-card)"
           }}>
-            <span style={{ color: s.color, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.12em" }}>{s.label}</span>
-            <strong style={{ fontSize: 30 }}>{s.count}</strong>
+            <span style={{ color: s.color, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 800 }}>{s.label}</span>
+            <strong style={{ fontSize: 30, color: "var(--text-primary)" }}>{s.count}</strong>
           </div>
         ))}
       </div>
@@ -75,7 +77,7 @@ export default function OrdersView({ orders, updateStatus }) {
       {/* Active Orders */}
       {pendingOrders.length > 0 && (
         <section style={{ ...panelStyle, padding: 24, display: "grid", gap: 14 }}>
-          <h2 style={{ margin: 0, color: "#facc15" }}>⏳ Active Orders ({pendingOrders.length})</h2>
+          <h2 style={{ margin: 0, color: "var(--status-pending-text)" }}>⏳ Active Orders ({pendingOrders.length})</h2>
           {pendingOrders.map(renderOrder)}
         </section>
       )}
@@ -83,7 +85,7 @@ export default function OrdersView({ orders, updateStatus }) {
       {/* Completed */}
       {completedOrders.length > 0 && (
         <section style={{ ...panelStyle, padding: 24, display: "grid", gap: 14 }}>
-          <h2 style={{ margin: 0, color: "#86efac" }}>✅ Completed ({completedOrders.length})</h2>
+          <h2 style={{ margin: 0, color: "var(--status-delivered-text)" }}>✅ Completed ({completedOrders.length})</h2>
           {completedOrders.map(renderOrder)}
         </section>
       )}
@@ -91,14 +93,14 @@ export default function OrdersView({ orders, updateStatus }) {
       {/* Other */}
       {otherOrders.length > 0 && (
         <section style={{ ...panelStyle, padding: 24, display: "grid", gap: 14 }}>
-          <h2 style={{ margin: 0, color: "#fca5a5" }}>Cancelled / Refunded ({otherOrders.length})</h2>
+          <h2 style={{ margin: 0, color: "var(--status-cancelled-text)" }}>Cancelled / Refunded ({otherOrders.length})</h2>
           {otherOrders.map(renderOrder)}
         </section>
       )}
 
       {orders.length === 0 && (
         <section style={{ ...panelStyle, padding: 40, textAlign: "center" }}>
-          <p style={{ margin: 0, color: "#8ea0c2", fontSize: 16 }}>No orders yet.</p>
+          <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: 16 }}>No orders yet.</p>
         </section>
       )}
     </div>

@@ -92,12 +92,12 @@ export default function App() {
         position="top-right"
         toastOptions={{
           style: {
-            background: "#161b28",
-            color: "#f0f2f8",
-            border: "1px solid rgba(255,255,255,0.07)",
+            background: "var(--toast-bg)",
+            color: "var(--toast-text)",
+            border: "1px solid var(--toast-border)",
             borderRadius: "12px",
             fontSize: "0.9rem",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
+            boxShadow: "var(--shadow-lg)"
           }
         }}
       />

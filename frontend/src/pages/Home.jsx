@@ -40,9 +40,10 @@ export default function Home() {
           position: "relative",
           padding: "60px 40px",
           borderRadius: "var(--radius-xl)",
-          background: "linear-gradient(135deg, rgba(124,92,255,0.12) 0%, rgba(8,10,15,0.95) 50%, rgba(99,102,241,0.08) 100%)",
+          background: "var(--home-hero-bg)",
           border: "1px solid var(--border-light)",
-          overflow: "hidden"
+          overflow: "hidden",
+          boxShadow: "var(--shadow-card)"
         }}
       >
         {/* Decorative circles */}

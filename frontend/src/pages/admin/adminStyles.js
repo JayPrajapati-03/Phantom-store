@@ -59,18 +59,18 @@ export const dangerStyle = {
 };
 
 export const statusColors = {
-  pending: { bg: "rgba(251, 191, 36, 0.14)", text: "#facc15" },
-  paid: { bg: "rgba(34, 197, 94, 0.14)", text: "#4ade80" },
-  processing: { bg: "rgba(59, 130, 246, 0.14)", text: "#60a5fa" },
-  shipped: { bg: "rgba(45, 212, 191, 0.14)", text: "#5eead4" },
-  delivered: { bg: "rgba(132, 204, 22, 0.14)", text: "#a3e635" },
-  cancelled: { bg: "rgba(248, 113, 113, 0.14)", text: "#fca5a5" },
-  refunded: { bg: "rgba(244, 114, 182, 0.14)", text: "#f9a8d4" }
+  pending: { bg: "rgba(251, 191, 36, 0.16)", text: "var(--status-pending-text)" },
+  paid: { bg: "rgba(34, 197, 94, 0.14)", text: "var(--status-paid-text)" },
+  processing: { bg: "rgba(59, 130, 246, 0.14)", text: "var(--status-processing-text)" },
+  shipped: { bg: "rgba(45, 212, 191, 0.14)", text: "var(--status-shipped-text)" },
+  delivered: { bg: "rgba(132, 204, 22, 0.14)", text: "var(--status-delivered-text)" },
+  cancelled: { bg: "rgba(248, 113, 113, 0.14)", text: "var(--status-cancelled-text)" },
+  refunded: { bg: "rgba(244, 114, 182, 0.14)", text: "var(--status-refunded-text)" }
 };
 
 export const formatStatus = (value = "") => value.charAt(0).toUpperCase() + value.slice(1);
 
-export const getStatusStyle = (status) => statusColors[status] || { bg: "rgba(124, 92, 255, 0.14)", text: "#c4b5fd" };
+export const getStatusStyle = (status) => statusColors[status] || { bg: "var(--accent-subtle)", text: "var(--text-accent)" };
 
 export const categoryOptions = ["glasses", "jackets", "bags", "watches", "shirts", "shoes", "rings", "hats"];
 export const arCategoryOptions = ["glasses", "jacket", "bag", "watch", "shirt", "shoes", "ring", "hat"];

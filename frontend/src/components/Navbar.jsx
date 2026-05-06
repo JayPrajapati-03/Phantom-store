@@ -105,8 +105,6 @@ export default function Navbar() {
 
   const panelLink = getPanelLink();
   const panelLabel = getPanelLabel();
-  const { theme } = useThemeStore();
-  const isLight = theme === "light";
 
   return (
     <header
@@ -116,9 +114,7 @@ export default function Navbar() {
         zIndex: 100,
         padding: "0 var(--space-lg)",
         transition: "all 0.3s var(--ease-out)",
-        background: scrolled
-          ? (isLight ? "rgba(245, 246, 250, 0.9)" : "rgba(8, 10, 15, 0.85)")
-          : (isLight ? "rgba(245, 246, 250, 0.6)" : "rgba(8, 10, 15, 0.5)"),
+        background: scrolled ? "var(--bg-backdrop-strong)" : "var(--bg-backdrop)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
         borderBottom: scrolled ? "1px solid var(--border-light)" : "1px solid transparent"
