@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useRef, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Environment, OrbitControls, useGLTF } from "@react-three/drei";
 import { useCamera } from "./useCamera.js";
@@ -255,7 +255,78 @@ function LoadedProductModel({ modelUrl, transform }) {
 
 function ProductModel({ modelUrl, keypoints, arCategory, videoSize }) {
   const resolvedModelUrl = resolveModelUrl(modelUrl, arCategory);
-  const transform = getModelPosition(keypoints, arCategory, videoSize);
+  const nextTransform = getModelPosition(keypoints, arCategory, videoSize);
+  const smoothedTransformRef = useRef(null);
+  const lockedHeadFitRef = useRef(null);
+  const category = String(arCategory || "").trim().toLowerCase();
+  const isHeadTracked = category === "hat" || category === "cap" || category === "helmet";
+  const transform = useMemo(() => {
+    const targetTransform =
+      isHeadTracked && lockedHeadFitRef.current
+        ? {
+            position: nextTransform.position,
+            rotation: lockedHeadFitRef.current.rotation,
+            scale: lockedHeadFitRef.current.scale
+          }
+        : nextTransform;
+
+    if (!smoothedTransformRef.current) {
+      smoothedTransformRef.current = {
+        position: targetTransform.position.clone(),
+        rotation: targetTransform.rotation.clone(),
+        scale: targetTransform.scale
+      };
+      if (isHeadTracked && !lockedHeadFitRef.current) {
+        lockedHeadFitRef.current = {
+          rotation: targetTransform.rotation.clone(),
+          scale: targetTransform.scale
+        };
+      }
+      return {
+        position: smoothedTransformRef.current.position.clone(),
+        rotation: smoothedTransformRef.current.rotation.clone(),
+        scale: smoothedTransformRef.current.scale
+      };
+    }
+
+    const current = smoothedTransformRef.current;
+    if (isHeadTracked && !lockedHeadFitRef.current) {
+      lockedHeadFitRef.current = {
+        rotation: targetTransform.rotation.clone(),
+        scale: targetTransform.scale
+      };
+    }
+
+    const positionDelta = current.position.distanceTo(targetTransform.position);
+    const rotationAlpha = isHeadTracked ? 0 : 0.22;
+    const scaleAlpha = isHeadTracked ? 0 : 0.2;
+    const positionAlpha = isHeadTracked ? 0.08 : 0.28;
+    const positionDeadZone = isHeadTracked ? 0.075 : 0.018;
+    const rotationDeadZone = isHeadTracked ? Infinity : 0.01;
+    const scaleDeadZone = isHeadTracked ? Infinity : 0.012;
+
+    if (positionDelta > positionDeadZone) {
+      current.position.lerp(targetTransform.position, positionAlpha);
+    }
+
+    const rotationDeltaX = targetTransform.rotation.x - current.rotation.x;
+    const rotationDeltaY = targetTransform.rotation.y - current.rotation.y;
+    const rotationDeltaZ = targetTransform.rotation.z - current.rotation.z;
+    if (Math.abs(rotationDeltaX) > rotationDeadZone) current.rotation.x += rotationDeltaX * rotationAlpha;
+    if (Math.abs(rotationDeltaY) > rotationDeadZone) current.rotation.y += rotationDeltaY * rotationAlpha;
+    if (Math.abs(rotationDeltaZ) > rotationDeadZone) current.rotation.z += rotationDeltaZ * rotationAlpha;
+
+    const scaleDelta = targetTransform.scale - current.scale;
+    if (Math.abs(scaleDelta) > scaleDeadZone) {
+      current.scale += scaleDelta * scaleAlpha;
+    }
+
+    return {
+      position: current.position.clone(),
+      rotation: current.rotation.clone(),
+      scale: current.scale
+    };
+  }, [isHeadTracked, nextTransform]);
 
   if (!Array.isArray(keypoints) || !keypoints.length) return null;
   if (Object.values(PROCEDURAL_MODELS).includes(resolvedModelUrl)) {
@@ -269,7 +340,14 @@ export default function ARCanvas({ product, onCaptureReady, preferredDeviceId, o
   const { videoRef, ready, error, devices, activeDeviceId } = useCamera({ preferredDeviceId });
   const { keypoints, loading: poseLoading, error: poseError, backend } = usePoseDetection(videoRef, ready);
   const containerRef = useRef(null);
-  const [videoSize, setVideoSize] = useState({ width: 640, height: 480 });
+  const [videoSize, setVideoSize] = useState({
+    width: 640,
+    height: 480,
+    displayWidth: 640,
+    displayHeight: 480,
+    cameraZ: 5,
+    fov: 45
+  });
 
   useEffect(() => {
     if (!onCameraChange) return;
@@ -315,15 +393,31 @@ export default function ARCanvas({ product, onCaptureReady, preferredDeviceId, o
     const video = videoRef.current;
     const syncVideoSize = () => {
       if (video.videoWidth && video.videoHeight) {
-        setVideoSize({ width: video.videoWidth, height: video.videoHeight });
+        const bounds = containerRef.current?.getBoundingClientRect();
+        setVideoSize({
+          width: video.videoWidth,
+          height: video.videoHeight,
+          displayWidth: bounds?.width || video.clientWidth || video.videoWidth,
+          displayHeight: bounds?.height || video.clientHeight || video.videoHeight,
+          cameraZ: 5,
+          fov: 45
+        });
       }
     };
 
     syncVideoSize();
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" && containerRef.current
+        ? new ResizeObserver(syncVideoSize)
+        : null;
+    if (resizeObserver && containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
     video.addEventListener("loadedmetadata", syncVideoSize);
     video.addEventListener("resize", syncVideoSize);
 
     return () => {
+      resizeObserver?.disconnect();
       video.removeEventListener("loadedmetadata", syncVideoSize);
       video.removeEventListener("resize", syncVideoSize);
     };

@@ -3,10 +3,27 @@ import * as THREE from "three";
 export function keypointTo3D(keypoint, videoSize = { width: 1280, height: 720 }, depth = 0) {
   if (!keypoint) return new THREE.Vector3(0, 0, depth);
 
-  const x = (keypoint.x / videoSize.width) * 2 - 1;
-  const y = -(keypoint.y / videoSize.height) * 2 + 1;
+  const videoWidth = videoSize.width || 1280;
+  const videoHeight = videoSize.height || 720;
+  const displayWidth = videoSize.displayWidth || videoWidth;
+  const displayHeight = videoSize.displayHeight || videoHeight;
+  const coverScale = Math.max(displayWidth / videoWidth, displayHeight / videoHeight);
+  const renderedWidth = videoWidth * coverScale;
+  const renderedHeight = videoHeight * coverScale;
+  const cropX = (renderedWidth - displayWidth) / 2;
+  const cropY = (renderedHeight - displayHeight) / 2;
+  const displayX = keypoint.x * coverScale - cropX;
+  const displayY = keypoint.y * coverScale - cropY;
 
-  return new THREE.Vector3(x * 2.1, y * 1.2, depth);
+  const x = (displayX / displayWidth) * 2 - 1;
+  const y = -(displayY / displayHeight) * 2 + 1;
+  const cameraZ = videoSize.cameraZ || 5;
+  const fov = THREE.MathUtils.degToRad(videoSize.fov || 45);
+  const distanceFromCamera = Math.abs(cameraZ - depth);
+  const visibleHeight = 2 * Math.tan(fov / 2) * distanceFromCamera;
+  const visibleWidth = visibleHeight * (displayWidth / displayHeight);
+
+  return new THREE.Vector3(x * (visibleWidth / 2), y * (visibleHeight / 2), depth);
 }
 
 const getKeypoints = (poseOrKeypoints) => {
@@ -40,6 +57,13 @@ const distance = (a, b, fallback = 1) => {
   return Math.hypot(a.x - b.x, a.y - b.y);
 };
 
+const hasPair = (a, b) => Boolean(a && b);
+
+const angleBetween = (a, b, fallback = 0) => {
+  if (!a || !b) return fallback;
+  return Math.atan2(b.y - a.y, b.x - a.x);
+};
+
 export function getModelPosition(poseOrKeypoints, arCategory, videoSize) {
   const category = normalizeCategory(arCategory);
   const keypoints = getKeypoints(poseOrKeypoints);
@@ -66,7 +90,13 @@ export function getModelPosition(poseOrKeypoints, arCategory, videoSize) {
 
   const shoulderWidth = distance(leftShoulder, rightShoulder, 220);
   const eyeWidth = distance(leftEye, rightEye, 80);
-  const faceWidth = distance(leftEar, rightEar, Math.max(eyeWidth * 2.1, shoulderWidth * 0.55));
+  const faceWidth = hasPair(leftEar, rightEar)
+    ? distance(leftEar, rightEar, eyeWidth * 2.45)
+    : Math.max(eyeWidth * 2.45, 120);
+  const hatWidth = hasPair(leftEar, rightEar)
+    ? faceWidth
+    : Math.max(eyeWidth * 2.55, shoulderWidth * 0.42, 130);
+  const faceTilt = angleBetween(leftEye, rightEye);
   const torsoHeight = distance(shoulderCenter, hipCenter, 260);
   const armLength = distance(rightShoulder || leftShoulder, rightWrist || leftWrist, 180);
   const handSize = distance(rightWrist, leftWrist, armLength * 0.35);
@@ -91,12 +121,12 @@ export function getModelPosition(poseOrKeypoints, arCategory, videoSize) {
   if (category === "hat" || category === "cap" || category === "helmet") {
     return {
       position: keypointTo3D(
-        faceCenter ? { ...faceCenter, y: faceCenter.y - faceWidth * 0.55 } : null,
+        faceCenter ? { ...faceCenter, y: faceCenter.y - hatWidth * 0.58 } : null,
         videoSize,
         -1.6
       ),
-      rotation: new THREE.Euler(0, 0, 0),
-      scale: Math.max(faceWidth / 140, 0.32)
+      rotation: new THREE.Euler(0, 0, faceTilt),
+      scale: Math.max(hatWidth / 205, 0.26)
     };
   }
 

@@ -122,7 +122,7 @@ export default function Navbar() {
     >
       <div
         style={{
-          maxWidth: 1200,
+          width: "100%",
           margin: "0 auto",
           display: "flex",
           justifyContent: "space-between",
@@ -188,9 +188,6 @@ export default function Navbar() {
             </Link>
           )}
 
-          {/* Theme Toggle */}
-          <ThemeToggle />
-
           {user ? (
             <Link
               to="/logout"
@@ -204,6 +201,9 @@ export default function Navbar() {
               Login
             </Link>
           )}
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
         </nav>
       </div>
     </header>

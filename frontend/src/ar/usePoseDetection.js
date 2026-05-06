@@ -3,7 +3,7 @@ import * as poseDetection from "@tensorflow-models/pose-detection";
 import * as tf from "@tensorflow/tfjs";
 import "@tensorflow/tfjs-backend-webgpu";
 
-const KEYPOINT_SCORE_THRESHOLD = 0.2;
+const KEYPOINT_SCORE_THRESHOLD = 0.35;
 
 const resolveBackend = async () => {
   await tf.ready();

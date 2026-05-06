@@ -76,6 +76,13 @@ export default function TryOn() {
     toast.success("Added to cart");
   };
 
+  const disableCamera = () => {
+    setPermissionGranted(false);
+    setPermissionError("");
+    setCaptureReviewImage(null);
+    setActiveCameraId("");
+  };
+
   const enableCamera = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
       const message = "Camera access is not supported in this browser.";
@@ -163,7 +170,7 @@ export default function TryOn() {
           ))}
         </select>
         <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.8125rem" }}>
-          Active: {cameraDevices.find((d) => d.deviceId === activeCameraId)?.label || "Loading camera..."}
+          Active: {permissionGranted ? cameraDevices.find((d) => d.deviceId === activeCameraId)?.label || "Loading camera..." : "Camera off"}
         </p>
       </section>
 
@@ -262,6 +269,12 @@ export default function TryOn() {
             }}>${Number(product.price).toFixed(2)}</p>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {permissionGranted && (
+              <button className="btn btn-secondary" onClick={disableCamera}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m2 2 20 20" /><path d="M7 7H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10" /><path d="M15 7h2a2 2 0 0 1 2 2v5" /><path d="m15 7-2-3h-2l-1 1.5" /></svg>
+                Turn off camera
+              </button>
+            )}
             <button className="btn btn-secondary" onClick={saveLook} disabled={!captureReviewImage}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
               Save look
