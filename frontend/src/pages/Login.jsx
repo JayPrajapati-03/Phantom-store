@@ -1,14 +1,53 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import api from "../utils/api.js";
 import { useAuthStore } from "../store/authStore.js";
-import toast from "react-hot-toast";
+
+function MailIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect width="20" height="16" x="2" y="4" rx="2" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+function EyeIcon({ hidden }) {
+  if (hidden) {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="m2 2 20 20" />
+        <path d="M10.58 10.58a2 2 0 0 0 2.83 2.83" />
+        <path d="M16.68 16.68A10.9 10.9 0 0 1 12 18c-5 0-9-6-9-6a17.8 17.8 0 0 1 4.36-4.95" />
+        <path d="M9.88 4.24A10.3 10.3 0 0 1 12 4c5 0 9 6 9 6a18.5 18.5 0 0 1-2.1 2.78" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
 
 export default function Login() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const [form, setForm] = useState({ email: "", password: "" });
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -19,15 +58,13 @@ export default function Login() {
 
       login(user, token);
 
-      // Route based on role
+      toast.success(`Welcome back, ${user.name}!`);
+
       if (user.role === "admin") {
-        toast.success(`Welcome back, ${user.name}!`);
         navigate("/admin");
       } else if (user.role === "merchant") {
-        toast.success(`Welcome back, ${user.name}!`);
         navigate("/merchant");
       } else {
-        toast.success(`Welcome back, ${user.name}!`);
         navigate("/");
       }
     } catch {
@@ -36,85 +73,128 @@ export default function Login() {
   };
 
   return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: "calc(100vh - 200px)",
-      animation: "fadeInUp 0.5s var(--ease-out)"
-    }}>
-      {/* Background orbs */}
-      <div style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(124,92,255,0.08), transparent 70%)", top: "20%", left: "10%", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(99,102,241,0.06), transparent 70%)", bottom: "20%", right: "15%", pointerEvents: "none" }} />
-
-      <form
-        onSubmit={submit}
-        className="glass-strong"
-        style={{
-          width: "100%",
-          maxWidth: 420,
-          padding: "var(--space-xl)",
-          display: "grid",
-          gap: "var(--space-md)",
-          position: "relative"
-        }}
-      >
-        <div style={{ textAlign: "center", marginBottom: 8 }}>
-          <div style={{
-            width: 52, height: 52, borderRadius: 14, margin: "0 auto 16px",
-            background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 22, fontWeight: 800, color: "#fff",
-            boxShadow: "0 4px 20px var(--accent-glow)"
-          }}>P</div>
-          <h1 style={{ margin: "0 0 4px", fontSize: "1.5rem" }}>Welcome back</h1>
-          <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.9375rem" }}>Sign in to your Phantom Store account</p>
+    <section className="login-shell" aria-labelledby="login-title">
+      <div className="login-showcase" aria-hidden="true">
+        <div className="login-showcase__topline">
+          <span className="login-kicker">AR commerce workspace</span>
+          <span className="login-live-dot">Live</span>
         </div>
 
-        <div style={{ display: "grid", gap: 6 }}>
-          <label style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>Email</label>
-          <div style={{ position: "relative" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-              <rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-            </svg>
+        <div className="login-device">
+          <div className="login-device__bar">
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="login-device__stage">
+            <div className="login-scan-frame">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="login-avatar">
+              <div className="login-avatar__head" />
+              <div className="login-avatar__torso" />
+              <div className="login-avatar__arm login-avatar__arm--left" />
+              <div className="login-avatar__arm login-avatar__arm--right" />
+            </div>
+            <div className="login-product-chip login-product-chip--glasses">Glasses fit 98%</div>
+            <div className="login-product-chip login-product-chip--jacket">Jacket size M</div>
+          </div>
+        </div>
+
+        <div className="login-showcase__copy">
+          <h2>One sign-in for shoppers, merchants, and admins.</h2>
+          <p>Route users into the right workspace with secure access to AR try-on, storefront operations, and platform controls.</p>
+        </div>
+
+        <div className="login-metrics">
+          <div>
+            <strong>3D</strong>
+            <span>try-on ready</span>
+          </div>
+          <div>
+            <strong>Role</strong>
+            <span>aware routing</span>
+          </div>
+          <div>
+            <strong>Fast</strong>
+            <span>checkout flow</span>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={submit} className="login-card" noValidate>
+        <div className="login-brand-mark" aria-hidden="true">P</div>
+
+        <div className="login-heading">
+          <span className="login-kicker">Phantom Store</span>
+          <h1 id="login-title">Welcome back</h1>
+          <p>Sign in once and continue to your customer, merchant, or admin workspace.</p>
+        </div>
+
+        <div className="login-field">
+          <label htmlFor="email">Email address</label>
+          <div className="login-input-wrap">
+            <span className="login-input-icon">
+              <MailIcon />
+            </span>
             <input
-              className="input"
+              id="email"
+              className="input login-input"
               type="email"
+              autoComplete="email"
               placeholder="you@example.com"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              style={{ paddingLeft: 42 }}
+              disabled={busy}
               required
             />
           </div>
         </div>
 
-        <div style={{ display: "grid", gap: 6 }}>
-          <label style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text-secondary)" }}>Password</label>
-          <div style={{ position: "relative" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
+        <div className="login-field">
+          <label htmlFor="password">Password</label>
+          <div className="login-input-wrap">
+            <span className="login-input-icon">
+              <LockIcon />
+            </span>
             <input
-              className="input"
-              type="password"
-              placeholder="••••••••"
+              id="password"
+              className="input login-input login-input--password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              placeholder="Enter your password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              style={{ paddingLeft: 42 }}
+              disabled={busy}
               required
             />
+            <button
+              type="button"
+              className="login-password-toggle"
+              onClick={() => setShowPassword((value) => !value)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              title={showPassword ? "Hide password" : "Show password"}
+              disabled={busy}
+            >
+              <EyeIcon hidden={!showPassword} />
+            </button>
           </div>
         </div>
 
-        <button
-          className="btn btn-primary"
-          style={{ justifyContent: "center", padding: "14px", fontSize: "0.9375rem", marginTop: 8 }}
-          disabled={busy}
-        >
-          {busy ? "Signing in..." : "Sign in"}
+        <button className="btn btn-primary login-submit" disabled={busy}>
+          {busy ? (
+            <>
+              <span className="login-spinner" aria-hidden="true" />
+              Signing in
+            </>
+          ) : (
+            "Sign in"
+          )}
         </button>
       </form>
-    </div>
+    </section>
   );
 }
