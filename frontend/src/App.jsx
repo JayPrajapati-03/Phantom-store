@@ -11,6 +11,7 @@ import Login from "./pages/Login.jsx";
 import Logout from "./pages/Logout.jsx";
 import MerchantPanel from "./pages/MerchantPanel.jsx";
 import OrderConfirmed from "./pages/OrderConfirmed.jsx";
+import Orders from "./pages/Orders.jsx";
 import ProductDetail from "./pages/ProductDetail.jsx";
 import TryOn from "./pages/TryOn.jsx";
 
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/confirmed" element={<OrderConfirmed />} />
+            <Route path="/orders" element={<Orders />} />
 
             {/* Single login — auto-routes based on role */}
             <Route path="/login" element={<Login />} />

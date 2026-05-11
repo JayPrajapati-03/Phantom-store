@@ -3,34 +3,36 @@ import { Link } from "react-router-dom";
 
 export default function OrderConfirmed() {
   return (
-    <section style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: "calc(100vh - 240px)",
-      gap: "var(--space-lg)",
-      animation: "fadeInUp 0.5s var(--ease-out)",
-      textAlign: "center"
-    }}>
-      {/* Animated checkmark */}
-      <div style={{
-        width: 80,
-        height: 80,
-        borderRadius: "50%",
-        background: "linear-gradient(135deg, var(--success), #059669)",
+    <section
+      style={{
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "0 4px 24px rgba(52, 211, 153, 0.3)",
-        animation: "scaleCheck 0.6s var(--ease-spring)"
-      }}>
+        minHeight: "calc(100vh - 240px)",
+        gap: "var(--space-lg)",
+        animation: "fadeInUp 0.5s var(--ease-out)",
+        textAlign: "center"
+      }}
+    >
+      <div
+        style={{
+          width: 80,
+          height: 80,
+          borderRadius: "50%",
+          background: "linear-gradient(135deg, var(--success), #059669)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 4px 24px rgba(52, 211, 153, 0.3)",
+          animation: "scaleCheck 0.6s var(--ease-spring)"
+        }}
+      >
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="20 6 9 17 4 12" />
         </svg>
       </div>
 
-      {/* Decorative dots */}
       <div style={{ position: "absolute", pointerEvents: "none", opacity: 0.15 }}>
         {[...Array(8)].map((_, i) => (
           <div
@@ -53,13 +55,18 @@ export default function OrderConfirmed() {
       <div>
         <h1 style={{ margin: "0 0 8px" }}>Order Confirmed!</h1>
         <p style={{ color: "var(--text-secondary)", margin: 0, fontSize: "1.1rem", maxWidth: 400 }}>
-          Your Phantom Store order is being processed. You'll receive a confirmation shortly.
+          Your Phantom Store order is being processed. You can review it anytime in your order history.
         </p>
       </div>
 
-      <Link to="/" className="btn btn-primary" style={{ padding: "14px 28px", marginTop: 8 }}>
-        Continue Shopping →
-      </Link>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", marginTop: 8 }}>
+        <Link to="/orders" className="btn btn-primary" style={{ padding: "14px 28px" }}>
+          View Past Orders
+        </Link>
+        <Link to="/" className="btn btn-secondary" style={{ padding: "14px 28px" }}>
+          Continue Shopping
+        </Link>
+      </div>
     </section>
   );
 }
