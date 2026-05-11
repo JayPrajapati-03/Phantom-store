@@ -1,6 +1,6 @@
 # Phantom Store
 
-Phantom Store is a production-ready MERN boilerplate for a browser-native AR try-on e-commerce platform. It includes a React + Vite storefront, a Node.js + Express API, MongoDB models, JWT authentication, Stripe payments, Cloudinary uploads, OpenAI-powered product intelligence, and TensorFlow/Three.js AR foundations.
+Phantom Store is a production-ready MERN boilerplate for a browser-native AR try-on e-commerce platform. It includes a React + Vite storefront, a Node.js + Express API, MongoDB models, JWT authentication, Razorpay payments, Cloudinary uploads, OpenAI-powered product intelligence, and TensorFlow/Three.js AR foundations.
 
 ## Tech Stack
 
@@ -8,7 +8,7 @@ Phantom Store is a production-ready MERN boilerplate for a browser-native AR try
 - AR: TensorFlow.js, MoveNet pose detection, Three.js, React Three Fiber, Drei
 - Backend: Node.js, Express, MongoDB, Mongoose
 - Auth: JWT, bcryptjs
-- Payments: Stripe Payment Intents and webhooks
+- Payments: Razorpay Orders and server-side signature verification
 - Media: Cloudinary
 - AI: OpenAI SDK
 
@@ -55,8 +55,8 @@ The frontend runs at `http://localhost:5173` and the backend API runs at `http:/
 | `backend/.env` | `MONGO_URI` | MongoDB connection string. |
 | `backend/.env` | `JWT_SECRET` | Secret used to sign JWT access tokens. |
 | `backend/.env` | `JWT_EXPIRES_IN` | JWT lifetime, such as `7d`. |
-| `backend/.env` | `STRIPE_SECRET_KEY` | Stripe secret key for Payment Intents. |
-| `backend/.env` | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret. |
+| `backend/.env` | `RAZORPAY_KEY_ID` | Razorpay key ID for creating orders (test or live). |
+| `backend/.env` | `RAZORPAY_KEY_SECRET` | Razorpay key secret for signature verification. |
 | `backend/.env` | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name. |
 | `backend/.env` | `CLOUDINARY_API_KEY` | Cloudinary API key. |
 | `backend/.env` | `CLOUDINARY_API_SECRET` | Cloudinary API secret. |
@@ -67,7 +67,7 @@ The frontend runs at `http://localhost:5173` and the backend API runs at `http:/
 | `backend/.env` | `APP_URL` | Optional public app URL sent to OpenRouter request headers. |
 | `backend/.env` | `APP_NAME` | Optional app name sent to OpenRouter request headers. |
 | `frontend/.env` | `VITE_API_URL` | Browser API base URL. |
-| `frontend/.env` | `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key for client checkout flows. |
+| `frontend/.env` | `VITE_RAZORPAY_KEY_ID` | Razorpay key ID used by the frontend checkout modal. |
 
 ## API Overview
 
@@ -86,11 +86,10 @@ The frontend runs at `http://localhost:5173` and the backend API runs at `http:/
 - `POST /api/stores` creates a store for merchants or admins.
 - `PUT /api/stores/:id` updates a store owned by the current merchant or any admin.
 - `DELETE /api/stores/:id` deletes a store owned by the current merchant or any admin.
-- `POST /api/orders` creates an order.
 - `GET /api/orders/my` returns the current user's orders.
 - `PATCH /api/orders/:id/status` updates order status for admins.
-- `POST /api/payment/create-payment-intent` creates a Stripe Payment Intent.
-- `POST /api/payment/webhook` handles Stripe webhook events.
+- `POST /api/payment/create-order` creates a Razorpay order for the checkout modal.
+- `POST /api/payment/verify-payment` verifies payment signature and creates the order in the database.
 - `POST /api/ai/style-suggest` generates style suggestions.
 - `POST /api/ai/semantic-search` searches products with AI tags.
 - `POST /api/ai/outfit-review` reviews an outfit.

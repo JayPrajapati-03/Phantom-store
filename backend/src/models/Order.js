@@ -49,9 +49,14 @@ const orderSchema = new mongoose.Schema(
       required: true,
       min: 0
     },
-    stripePaymentId: {
+    razorpayOrderId: {
       type: String,
       required: true,
+      index: true
+    },
+    razorpayPaymentId: {
+      type: String,
+      default: "",
       index: true
     },
     status: {

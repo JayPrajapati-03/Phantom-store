@@ -1,67 +1,136 @@
+import crypto from "crypto";
 import express from "express";
-import Stripe from "stripe";
+import Razorpay from "razorpay";
 import Order from "../models/Order.js";
+import Product from "../models/Product.js";
 import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_missing");
 
-router.post("/create-payment-intent", verifyToken, async (req, res, next) => {
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/payment/create-order
+// Creates a Razorpay order and returns order details to the frontend.
+// The frontend uses these to open the Razorpay Checkout modal.
+// ---------------------------------------------------------------------------
+router.post("/create-order", verifyToken, async (req, res, next) => {
   try {
-    const { amount, currency = "usd", metadata = {} } = req.body;
+    const { amount, currency = "INR" } = req.body;
 
-    if (!amount || Number(amount) < 50) {
-      return res.status(400).json({ message: "Amount must be at least 50 cents" });
+    if (!amount || Number(amount) < 100) {
+      return res.status(400).json({ message: "Amount must be at least ₹1 (100 paise)" });
     }
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    const options = {
       amount: Math.round(Number(amount)),
-      currency,
-      automatic_payment_methods: { enabled: true },
-      metadata: {
-        userId: String(req.user._id),
-        ...metadata
+      currency: currency.toUpperCase(),
+      receipt: `rcpt_${req.user._id}_${Date.now()}`,
+      notes: {
+        userId: String(req.user._id)
       }
-    });
+    };
+
+    const order = await razorpay.orders.create(options);
 
     return res.json({
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      key: process.env.RAZORPAY_KEY_ID
     });
   } catch (error) {
     return next(error);
   }
 });
 
-router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
-  const signature = req.headers["stripe-signature"];
-
+// ---------------------------------------------------------------------------
+// POST /api/payment/verify-payment
+// 1. Verifies the Razorpay payment signature using HMAC SHA256.
+// 2. Creates the order in MongoDB ONLY after successful verification.
+// 3. Decrements product stock.
+// Never trust frontend payment success — always verify server-side.
+// ---------------------------------------------------------------------------
+router.post("/verify-payment", verifyToken, async (req, res, next) => {
   try {
-    const event = stripe.webhooks.constructEvent(
-      req.body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET || "whsec_missing"
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      items
+    } = req.body;
+
+    // --- Validate required fields -------------------------------------------
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ message: "Missing payment verification fields" });
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: "Order items are required" });
+    }
+
+    // --- Idempotency: prevent duplicate order creation -----------------------
+    const existingOrder = await Order.findOne({ razorpayOrderId: razorpay_order_id });
+    if (existingOrder) {
+      return res.json({ success: true, order: existingOrder });
+    }
+
+    // --- Signature verification using HMAC SHA256 ----------------------------
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
+
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({ message: "Payment verification failed — invalid signature" });
+    }
+
+    // --- Build order items from verified product data ------------------------
+    const productIds = items.map((item) => item.productId);
+    const products = await Product.find({ _id: { $in: productIds } });
+    const productMap = new Map(products.map((product) => [String(product._id), product]));
+
+    const orderItems = items.map((item) => {
+      const product = productMap.get(String(item.productId));
+      if (!product) {
+        throw Object.assign(new Error(`Product not found: ${item.productId}`), { status: 400 });
+      }
+
+      const quantity = Math.max(Number(item.quantity) || 1, 1);
+      return {
+        productId: product._id,
+        name: product.name,
+        image: product.images?.[0]?.url || "",
+        price: product.price,
+        quantity
+      };
+    });
+
+    const total = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    // --- Create the order ----------------------------------------------------
+    const order = await Order.create({
+      userId: req.user._id,
+      items: orderItems,
+      total,
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
+      status: "paid"
+    });
+
+    // --- Decrement stock -----------------------------------------------------
+    await Promise.all(
+      orderItems.map((item) =>
+        Product.updateOne({ _id: item.productId }, { $inc: { stock: -item.quantity } })
+      )
     );
 
-    if (event.type === "payment_intent.succeeded") {
-      const paymentIntent = event.data.object;
-      await Order.updateMany(
-        { stripePaymentId: paymentIntent.id, status: "pending" },
-        { status: "paid" }
-      );
-    }
-
-    if (event.type === "payment_intent.payment_failed") {
-      const paymentIntent = event.data.object;
-      await Order.updateMany(
-        { stripePaymentId: paymentIntent.id, status: "pending" },
-        { status: "cancelled" }
-      );
-    }
-
-    return res.json({ received: true });
+    return res.json({ success: true, order });
   } catch (error) {
-    return res.status(400).send(`Webhook Error: ${error.message}`);
+    return next(error);
   }
 });
 

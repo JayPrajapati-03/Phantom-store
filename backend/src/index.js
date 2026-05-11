@@ -22,10 +22,7 @@ app.use(
   })
 );
 
-app.use((req, res, next) => {
-  if (req.originalUrl === "/api/payment/webhook") return next();
-  return express.json({ limit: "10mb" })(req, res, next);
-});
+app.use(express.json({ limit: "10mb" }));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);

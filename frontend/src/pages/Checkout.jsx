@@ -1,34 +1,143 @@
-import React from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import api from "../utils/api.js";
 import { useCartStore } from "../store/cartStore.js";
 import { useAuthStore } from "../store/authStore.js";
+
+// ---------------------------------------------------------------------------
+// Dynamically load Razorpay Checkout script once and cache the promise.
+// ---------------------------------------------------------------------------
+let razorpayScriptPromise = null;
+
+function loadRazorpayScript() {
+  if (razorpayScriptPromise) return razorpayScriptPromise;
+
+  razorpayScriptPromise = new Promise((resolve, reject) => {
+    if (typeof window.Razorpay !== "undefined") {
+      resolve(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => {
+      razorpayScriptPromise = null;
+      reject(new Error("Failed to load Razorpay SDK"));
+    };
+    document.body.appendChild(script);
+  });
+
+  return razorpayScriptPromise;
+}
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, total, clearCart } = useCartStore();
   const { token, user } = useAuthStore();
+  const [loading, setLoading] = useState(false);
+  const paymentInProgress = useRef(false);
 
   if (!user || user.role !== "customer") {
     return <Navigate to="/login" replace />;
   }
 
-  const checkout = async () => {
+  // Memoised checkout handler with duplicate-payment guard
+  const checkout = useCallback(async () => {
     if (!token) { navigate("/login"); return; }
+    if (paymentInProgress.current) return;
 
-    const payment = await api.post("/payment/create-payment-intent", {
-      amount: Math.round(total() * 100),
-      currency: "usd"
-    });
+    paymentInProgress.current = true;
+    setLoading(true);
 
-    await api.post("/orders", {
-      stripePaymentId: payment.data.paymentIntentId,
-      items: items.map((item) => ({ productId: item._id, quantity: item.quantity }))
-    });
+    try {
+      // 1. Load Razorpay script
+      await loadRazorpayScript();
 
-    clearCart();
-    navigate("/confirmed");
-  };
+      // 2. Create Razorpay order on the backend
+      const { data } = await api.post("/payment/create-order", {
+        amount: Math.round(total() * 100),
+        currency: "INR"
+      });
+
+      // 3. Build checkout options
+      const options = {
+        key: data.key,
+        amount: data.amount,
+        currency: data.currency,
+        order_id: data.orderId,
+        name: "Phantom Store",
+        description: `Order · ${items.length} item${items.length !== 1 ? "s" : ""}`,
+        prefill: {
+          name: user.name || "",
+          email: user.email || ""
+        },
+        theme: {
+          color: "#7c5cff"
+        },
+
+        // --- Success handler -------------------------------------------------
+        handler: async (response) => {
+          try {
+            const verifyRes = await api.post("/payment/verify-payment", {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              items: items.map((item) => ({
+                productId: item._id,
+                quantity: item.quantity
+              }))
+            });
+
+            if (verifyRes.data.success) {
+              clearCart();
+              toast.success("Payment successful!");
+              navigate("/confirmed");
+            } else {
+              toast.error("Payment verification failed. Please contact support.");
+            }
+          } catch (err) {
+            console.error("Verification error:", err);
+            toast.error(
+              err.response?.data?.message || "Payment verification failed. Please contact support."
+            );
+          } finally {
+            paymentInProgress.current = false;
+            setLoading(false);
+          }
+        },
+
+        // --- Modal dismissed / cancelled ------------------------------------
+        modal: {
+          ondismiss: () => {
+            paymentInProgress.current = false;
+            setLoading(false);
+            toast("Payment cancelled", { icon: "ℹ️" });
+          }
+        }
+      };
+
+      // 4. Open Razorpay Checkout modal
+      const rzp = new window.Razorpay(options);
+
+      rzp.on("payment.failed", (response) => {
+        paymentInProgress.current = false;
+        setLoading(false);
+        toast.error(
+          response.error?.description || "Payment failed. Please try again."
+        );
+      });
+
+      rzp.open();
+    } catch (err) {
+      console.error("Checkout error:", err);
+      toast.error(err.response?.data?.message || "Could not initiate payment. Please try again.");
+      paymentInProgress.current = false;
+      setLoading(false);
+    }
+  }, [token, items, total, clearCart, navigate, user]);
 
   return (
     <section style={{
@@ -75,26 +184,56 @@ export default function Checkout() {
             background: "linear-gradient(135deg, var(--accent-light), #818cf8)",
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
           }}>
-            ${total().toFixed(2)}
+            ₹{total().toFixed(2)}
           </p>
         </div>
 
         <button
           className="btn btn-primary"
-          disabled={!items.length}
+          disabled={!items.length || loading}
           onClick={checkout}
-          style={{ justifyContent: "center", padding: "14px 28px", fontSize: "1rem" }}
+          style={{
+            justifyContent: "center",
+            padding: "14px 28px",
+            fontSize: "1rem",
+            opacity: loading ? 0.7 : 1,
+            cursor: loading ? "not-allowed" : "pointer"
+          }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
-          Confirm & Pay
+          {loading ? (
+            <>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ animation: "spin 1s linear infinite" }}
+              >
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
+              Processing…
+            </>
+          ) : (
+            <>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              Confirm & Pay
+            </>
+          )}
         </button>
 
         <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.75rem" }}>
-          Secured by Stripe · 256-bit encryption
+          Secured by Razorpay · 256-bit encryption
         </p>
       </div>
+
+      {/* Spinner keyframe (scoped via inline style) */}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </section>
   );
 }

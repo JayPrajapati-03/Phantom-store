@@ -280,7 +280,8 @@ const seed = async () => {
 
   const orderSeeds = [
     {
-      stripePaymentId: "pi_seed_001",
+      razorpayOrderId: "order_seed_001",
+      razorpayPaymentId: "pay_seed_001",
       status: "processing",
       items: [
         products.find((product) => product.name === "Coastal Sun Aviators"),
@@ -288,7 +289,8 @@ const seed = async () => {
       ]
     },
     {
-      stripePaymentId: "pi_seed_002",
+      razorpayOrderId: "order_seed_002",
+      razorpayPaymentId: "pay_seed_002",
       status: "delivered",
       items: [
         products.find((product) => product.name === "Midnight Tailored Jacket"),
@@ -309,12 +311,13 @@ const seed = async () => {
       }));
 
     await Order.findOneAndUpdate(
-      { stripePaymentId: seedOrder.stripePaymentId },
+      { razorpayOrderId: seedOrder.razorpayOrderId },
       {
         userId: customer._id,
         items,
         total: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
-        stripePaymentId: seedOrder.stripePaymentId,
+        razorpayOrderId: seedOrder.razorpayOrderId,
+        razorpayPaymentId: seedOrder.razorpayPaymentId,
         status: seedOrder.status
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
