@@ -24,6 +24,8 @@ const NOISE_SOURCES = [
   "localhost:37857"
 ];
 
+const UNSAFE_HEADER_PROBES = new Set(["x-rtb-fingerprint-id", "request-id"]);
+
 const isNoise = (args) => {
   const text = args
     .map((arg) => {
@@ -57,6 +59,15 @@ const shouldSuppressEvent = (event) => {
 
 export function quietExternalCheckoutNoise() {
   if (!import.meta.env.DEV) return;
+  if (window.__quietExternalCheckoutNoiseInstalled) return;
+  window.__quietExternalCheckoutNoiseInstalled = true;
+
+  const originalGetResponseHeader = XMLHttpRequest.prototype.getResponseHeader;
+
+  XMLHttpRequest.prototype.getResponseHeader = function getResponseHeader(name) {
+    if (UNSAFE_HEADER_PROBES.has(String(name).toLowerCase())) return null;
+    return originalGetResponseHeader.call(this, name);
+  };
 
   const originalLog = console.log;
   const originalInfo = console.info;
