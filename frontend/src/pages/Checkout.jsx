@@ -1,48 +1,46 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../utils/api.js";
+import { getRazorpayErrorMessage, loadRazorpayCheckout } from "../utils/razorpay.js";
 import { useCartStore } from "../store/cartStore.js";
 import { useAuthStore } from "../store/authStore.js";
-
-let razorpayScriptPromise = null;
-
-function loadRazorpayScript() {
-  if (razorpayScriptPromise) return razorpayScriptPromise;
-
-  razorpayScriptPromise = new Promise((resolve, reject) => {
-    if (typeof window.Razorpay !== "undefined") {
-      resolve(true);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => resolve(true);
-    script.onerror = () => {
-      razorpayScriptPromise = null;
-      reject(new Error("Failed to load Razorpay SDK"));
-    };
-    document.body.appendChild(script);
-  });
-
-  return razorpayScriptPromise;
-}
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, total, clearCart, replaceItems } = useCartStore();
   const { token, user } = useAuthStore();
   const [loading, setLoading] = useState(false);
+  const mountedRef = useRef(true);
   const paymentInProgress = useRef(false);
+  const razorpayRef = useRef(null);
 
-  if (!user || user.role !== "customer") {
-    return <Navigate to="/login" replace />;
-  }
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+
+      if (razorpayRef.current?.close) {
+        razorpayRef.current.close();
+      }
+
+      razorpayRef.current = null;
+      paymentInProgress.current = false;
+    };
+  }, []);
+
+  const releaseCheckoutLock = useCallback(() => {
+    paymentInProgress.current = false;
+    razorpayRef.current = null;
+
+    if (mountedRef.current) {
+      setLoading(false);
+    }
+  }, []);
 
   const checkout = useCallback(async () => {
-    if (!token) {
+    if (!token || !user) {
       navigate("/login");
       return;
     }
@@ -51,12 +49,19 @@ export default function Checkout() {
 
     paymentInProgress.current = true;
     setLoading(true);
+    let settled = false;
+    let paymentFailed = false;
+
+    const finishOnce = () => {
+      if (settled) return;
+      settled = true;
+      releaseCheckoutLock();
+    };
 
     try {
       if (!items.length) {
         toast.error("Your cart is empty.");
-        paymentInProgress.current = false;
-        setLoading(false);
+        finishOnce();
         return;
       }
 
@@ -94,8 +99,7 @@ export default function Checkout() {
         replaceItems(validItems);
 
         toast.error("Some cart items were no longer available. Please review your cart and try again.");
-        paymentInProgress.current = false;
-        setLoading(false);
+        finishOnce();
         navigate("/cart");
         return;
       }
@@ -105,7 +109,7 @@ export default function Checkout() {
         0
       );
 
-      await loadRazorpayScript();
+      const Razorpay = await loadRazorpayCheckout();
 
       const { data } = await api.post("/payment/create-order", {
         amount: Math.round(checkoutAmount * 100),
@@ -115,6 +119,10 @@ export default function Checkout() {
           quantity: item.quantity
         }))
       });
+
+      if (!data?.key || !data?.orderId || !data?.amount || !data?.currency) {
+        throw new Error("Payment order response is incomplete");
+      }
 
       const options = {
         key: data.key,
@@ -132,6 +140,10 @@ export default function Checkout() {
         },
         handler: async (response) => {
           try {
+            if (!response?.razorpay_order_id || !response?.razorpay_payment_id || !response?.razorpay_signature) {
+              throw new Error("Razorpay returned an incomplete payment response");
+            }
+
             const verifyRes = await api.post("/payment/verify-payment", {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -144,46 +156,53 @@ export default function Checkout() {
 
             if (verifyRes.data.success) {
               clearCart();
+              finishOnce();
               toast.success("Payment successful!");
               navigate("/confirmed");
             } else {
               toast.error("Payment verification failed. Please contact support.");
+              finishOnce();
             }
           } catch (err) {
             console.error("Verification error:", err);
             toast.error(
-              err.response?.data?.message || "Payment verification failed. Please contact support."
+              getRazorpayErrorMessage(err, "Payment verification failed. Please contact support.")
             );
-          } finally {
-            paymentInProgress.current = false;
-            setLoading(false);
+            finishOnce();
           }
         },
         modal: {
           ondismiss: () => {
-            paymentInProgress.current = false;
-            setLoading(false);
-            toast("Payment cancelled", { icon: "i" });
+            if (!settled) {
+              if (!paymentFailed) {
+                toast("Payment cancelled", { icon: "i" });
+              }
+              finishOnce();
+            }
           }
         }
       };
 
-      const rzp = new window.Razorpay(options);
+      const rzp = new Razorpay(options);
+      razorpayRef.current = rzp;
 
       rzp.on("payment.failed", (response) => {
-        paymentInProgress.current = false;
-        setLoading(false);
-        toast.error(response.error?.description || "Payment failed. Please try again.");
+        paymentFailed = true;
+        console.error("Razorpay payment failed:", response?.error || response);
+        toast.error(getRazorpayErrorMessage(response, "Payment failed. Please try again."));
       });
 
       rzp.open();
     } catch (err) {
       console.error("Checkout error:", err);
-      toast.error(err.response?.data?.message || "Could not initiate payment. Please try again.");
-      paymentInProgress.current = false;
-      setLoading(false);
+      toast.error(getRazorpayErrorMessage(err, "Could not initiate payment. Please try again."));
+      finishOnce();
     }
-  }, [token, items, total, clearCart, replaceItems, navigate, user]);
+  }, [token, items, clearCart, replaceItems, navigate, user, releaseCheckoutLock]);
+
+  if (!user || user.role !== "customer") {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <section

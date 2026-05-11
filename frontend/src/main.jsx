@@ -2,9 +2,6 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
-import { quietExternalCheckoutNoise } from "./dev/quietExternalCheckoutNoise.js";
-
-quietExternalCheckoutNoise();
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
