@@ -1,16 +1,26 @@
 import crypto from "crypto";
 import express from "express";
-import Razorpay from "razorpay";
+import { createRequire } from "module";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import { verifyToken } from "../middleware/auth.js";
 
+const require = createRequire(import.meta.url);
+const Razorpay = require("razorpay");
+
 const router = express.Router();
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
-});
+let razorpayInstance = null;
+
+function getRazorpay() {
+  if (!razorpayInstance) {
+    razorpayInstance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET
+    });
+  }
+  return razorpayInstance;
+}
 
 // ---------------------------------------------------------------------------
 // POST /api/payment/create-order
@@ -21,20 +31,25 @@ router.post("/create-order", verifyToken, async (req, res, next) => {
   try {
     const { amount, currency = "INR" } = req.body;
 
-    if (!amount || Number(amount) < 100) {
+    // Razorpay amount must be in the smallest currency unit (paise for INR)
+    const totalAmount = Math.round(Number(amount));
+
+    if (!totalAmount || totalAmount < 100) {
       return res.status(400).json({ message: "Amount must be at least ₹1 (100 paise)" });
     }
 
     const options = {
-      amount: Math.round(Number(amount)),
+      amount: totalAmount,
       currency: currency.toUpperCase(),
-      receipt: `rcpt_${req.user._id}_${Date.now()}`,
+      receipt: `rcpt_${String(req.user._id).slice(-8)}_${Date.now().toString(36)}`,
       notes: {
         userId: String(req.user._id)
       }
     };
 
-    const order = await razorpay.orders.create(options);
+    console.log("Creating Razorpay order with options:", options);
+    const order = await getRazorpay().orders.create(options);
+    console.log("Razorpay order created:", order.id);
 
     return res.json({
       orderId: order.id,
@@ -43,6 +58,7 @@ router.post("/create-order", verifyToken, async (req, res, next) => {
       key: process.env.RAZORPAY_KEY_ID
     });
   } catch (error) {
+    console.error("Razorpay Order Creation Error:", error);
     return next(error);
   }
 });
