@@ -55,6 +55,16 @@ export const useCartStore = create(
               : item
           )
         })),
+      replaceItems: (items) =>
+        set({
+          items: Array.isArray(items)
+            ? items.map((item) => ({
+                ...item,
+                qty: item.qty ?? item.quantity ?? 1,
+                quantity: item.quantity ?? item.qty ?? 1
+              }))
+            : []
+        }),
       clearCart: () => set({ items: [] }),
       total: () =>
         get().items.reduce((sum, item) => sum + Number(item.price) * (item.qty ?? item.quantity ?? 1), 0)

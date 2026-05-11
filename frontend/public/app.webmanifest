@@ -5,6 +5,5 @@
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#080a0f",
-  "background_color": "#080a0f",
-  "serviceworker": {}
+  "background_color": "#080a0f"
 }
