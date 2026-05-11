@@ -1,9 +1,47 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      /**
+       * ULTIMATE CONSOLE SILENCE SCRIPT
+       * Intercepts and suppresses Razorpay-internal security and network noise.
+       */
+      (function() {
+        const noiseKeywords = ['razorpay', 'unsafe header', 'accelerometer', 'permissions policy', 'serviceworker', 'localhost:7070', 'localhost:37857'];
+        
+        // 1. Suppress Browser Engine Logs (console.error/warn)
+        const orgError = console.error;
+        const orgWarn = console.warn;
+        const isNoise = (args) => {
+          try { return noiseKeywords.some(k => Array.from(args).join(' ').toLowerCase().includes(k)); } 
+          catch(e) { return false; }
+        };
+        
+        console.error = function() { if (!isNoise(arguments)) orgError.apply(console, arguments); };
+        console.warn = function() { if (!isNoise(arguments)) orgWarn.apply(console, arguments); };
+
+        // 2. Suppress "Refused to get unsafe header" (XHR Patch)
+        const orgGetHeader = XMLHttpRequest.prototype.getResponseHeader;
+        XMLHttpRequest.prototype.getResponseHeader = function(h) {
+          if (h && ['x-rtb-fingerprint-id', 'request-id'].includes(h.toLowerCase())) return null;
+          return orgGetHeader.apply(this, arguments);
+        };
+
+        // 3. Suppress "ERR_CONNECTION_REFUSED" for Razorpay local probing (Image Patch)
+        const OrgImage = window.Image;
+        window.Image = function() {
+          const img = new OrgImage();
+          const orgSetAttribute = img.setAttribute;
+          img.setAttribute = function(name, value) {
+            if (name === 'src' && (value.includes('localhost:7070') || value.includes('localhost:37857'))) return;
+            return orgSetAttribute.apply(img, arguments);
+          };
+          return img;
+        };
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Permissions-Policy" content="accelerometer=*" />
     <meta name="theme-color" content="#080a0f" />
     <meta name="description" content="Phantom Store — Browser-native AR try-on commerce. Shop products with 3D previews, AI style support, and camera-based try-on experiences." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />

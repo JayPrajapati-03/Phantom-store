@@ -1,0 +1,10 @@
+{
+  "short_name": "Phantom",
+  "name": "Phantom Store",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#080a0f",
+  "background_color": "#080a0f",
+  "serviceworker": {}
+}
