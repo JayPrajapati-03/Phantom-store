@@ -2,7 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "../store/authStore.js";
 
 const api = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/api` || "http://localhost:5000/api",
+  baseURL: "https://phantom-store-51js.onrender.com/api",
   timeout: 30000
 });
 
