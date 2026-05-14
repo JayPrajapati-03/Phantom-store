@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Phantom Store</title>
+  <desc id="desc">Phantom Store checkout logo</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#0c1119" />
+      <stop offset="100%" stop-color="#1f2a44" />
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#818cf8" />
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)" />
+  <path
+    d="M28 96V32h30c8.4 0 15.1 1.8 20 5.5 5.5 4.1 8.2 10 8.2 17.6 0 7.5-2.7 13.4-8.2 17.5-4.9 3.6-11.6 5.4-20 5.4H44V96H28zm16-31.2h13.5c8.4 0 12.6-3.3 12.6-9.8S65.9 45 57.5 45H44v19.8z"
+    fill="url(#glow)"
+  />
+  <circle cx="94" cy="92" r="10" fill="#f8fafc" opacity="0.9" />
+</svg>
