@@ -12,6 +12,12 @@ const router = express.Router();
 
 let razorpayInstance = null;
 
+const maskKey = (value = "") => {
+  const trimmed = String(value).trim();
+  if (trimmed.length <= 8) return trimmed;
+  return `${trimmed.slice(0, 8)}...${trimmed.slice(-4)}`;
+};
+
 function getRazorpay() {
   if (!razorpayInstance) {
     const keyId = String(process.env.RAZORPAY_KEY_ID || "").trim();
@@ -87,13 +93,21 @@ router.post("/create-order", verifyToken, async (req, res, next) => {
 
     console.log("Creating Razorpay order with options:", options);
     const order = await getRazorpay().orders.create(options);
-    console.log("Razorpay order created:", order.id);
+    const keyId = String(process.env.RAZORPAY_KEY_ID || "").trim();
+
+    console.log("Razorpay order created:", {
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId: maskKey(keyId),
+      receipt: options.receipt
+    });
 
     return res.json({
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
-      key: process.env.RAZORPAY_KEY_ID
+      key: keyId
     });
   } catch (error) {
     console.error("Razorpay Order Creation Error:", error);

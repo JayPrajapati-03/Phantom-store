@@ -6,6 +6,8 @@ import { getRazorpayErrorMessage, loadRazorpayCheckout } from "../utils/razorpay
 import { useCartStore } from "../store/cartStore.js";
 import { useAuthStore } from "../store/authStore.js";
 
+const normalizeKey = (value) => String(value || "").trim();
+
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, total, clearCart, replaceItems } = useCartStore();
@@ -124,8 +126,10 @@ export default function Checkout() {
         throw new Error("Payment order response is incomplete");
       }
 
+      const backendKey = normalizeKey(data.key);
+
       const options = {
-        key: data.key,
+        key: backendKey,
         amount: data.amount,
         currency: data.currency,
         order_id: data.orderId,
@@ -182,6 +186,10 @@ export default function Checkout() {
           }
         }
       };
+
+      if (!options.key) {
+        throw new Error("Razorpay key is missing from the frontend configuration.");
+      }
 
       const rzp = new Razorpay(options);
       razorpayRef.current = rzp;

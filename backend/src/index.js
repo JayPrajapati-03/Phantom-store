@@ -18,8 +18,7 @@ const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 app.use(
   cors({
     origin: CLIENT_URL.split(",").map((origin) => origin.trim()),
-    credentials: true,
-    exposedHeaders: ["x-rtb-fingerprint-id", "request-id"]
+    credentials: true
   })
 );
 
